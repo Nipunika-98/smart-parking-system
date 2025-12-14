@@ -117,3 +117,36 @@ app.*.symbols
 !**/ios/**/default.perspectivev3
 !/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages
 !/dev/ci/**/Gemfile.lock
+
+# -------------------
+# Node / Angular
+# -------------------
+node_modules/
+dist/
+tmp/
+out-tsc/
+coverage/
+.angular/cache/
+package-lock.json
+yarn.lock
+
+# -------------------
+# C++ / Simulation
+# -------------------
+*.exe
+*.out
+*.o
+*.obj
+*.a
+*.lib
+*.dll
+*.so
+*.dSYM/
+*.log
+*.gch
+*.pch
+*.ipch
+*.user
+*.vs
+build/
+cmake-build-*/
