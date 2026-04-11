@@ -1,10 +1,26 @@
 #include <Arduino.h>
 #include <Adafruit_NeoPixel.h>
+#include <WiFi.h>
+#include <time.h>
+#include <Firebase_ESP_Client.h>
+
+// Provide the token generation process info.
+#include "addons/TokenHelper.h"
 
 // ========================================
 // 9-Slot Smart Parking Management System
 // Wokwi-Compatible Version
 // ========================================
+
+// Insert your Firebase credentials here
+#define FIREBASE_API_KEY "AIzaSyB0-PX-my1Y4cquM66ZK2yvR7cvFFrXAwo"
+#define FIREBASE_PROJECT_ID "smartparkingsystem-e8234"
+#define USER_EMAIL "naveensanjayab@gmail.com"
+#define USER_PASSWORD "naveen123"
+
+// WiFi Credentials (Wokwi default)
+#define WIFI_SSID "Wokwi-GUEST"
+#define WIFI_PASSWORD ""
 
 #define NUM_SLOTS 9
 #define LED_PIN 15
@@ -16,19 +32,53 @@ Adafruit_NeoPixel strip(NUM_SLOTS, LED_PIN, NEO_GRB + NEO_KHZ800);
 // Pin assignments for 9 sensors (direct connection)
 // Using only pins available in Wokwi ESP32 DevKit C V4
 const int triggerPins[NUM_SLOTS] = {26, 25, 33, 32, 13, 12, 14, 27, 19};
-const int echoPins[NUM_SLOTS] = {35, 34, 23, 22, 4, 16, 17, 5, 18};
+const int echoPins[NUM_SLOTS] = {35, 34, 23, 16, 4, 22, 17, 5, 18};
 
-// Slot names for better readability
+// Slot names representing different levels
 const String slotNames[NUM_SLOTS] = {
-  "A1", "A2", "A3", 
-  "B1", "B2", "B3", 
-  "C1", "C2", "C3"
+  "L1-A-01", "L1-A-02", "L1-B-03", 
+  "L2-C-01", "L2-D-02", "L2-D-03", 
+  "L3-E-01", "L3-E-02", "L3-F-03"
 };
+
+// Level mapping for the slots
+const int slotLevels[NUM_SLOTS] = {1, 1, 1, 2, 2, 2, 3, 3, 3};
 
 // State tracking
 bool slotState[NUM_SLOTS];
 int slotDistance[NUM_SLOTS];
 int availableCount = NUM_SLOTS;
+
+// Firebase objects
+FirebaseData fbdo;
+FirebaseAuth auth;
+FirebaseConfig config;
+
+// NTP server for time
+const char* ntpServer = "pool.ntp.org";
+
+// Function to sync time
+void initTime() {
+  configTime(0, 0, ntpServer);
+  Serial.print("Waiting for NTP time sync: ");
+  time_t now = time(nullptr);
+  while (now < 8 * 3600 * 2) {
+    delay(500);
+    Serial.print(".");
+    now = time(nullptr);
+  }
+  Serial.println("\nTime synced.");
+}
+
+// Generate an RFC3339 formatted timestamp
+String getTimestamp() {
+  time_t now = time(nullptr);
+  struct tm timeinfo;
+  gmtime_r(&now, &timeinfo);
+  char buffer[30];
+  strftime(buffer, sizeof(buffer), "%Y-%m-%dT%H:%M:%SZ", &timeinfo);
+  return String(buffer);
+}
 
 // Read ultrasonic sensor
 long readUltrasonic(int trigPin, int echoPin) {
@@ -75,15 +125,75 @@ void printStatus() {
   Serial.println("========================================\n");
 }
 
+void updateFirestore(int index, bool isOccupied) {
+  if (Firebase.ready()) {
+    String documentPath = "parking_slots/" + slotNames[index];
+    
+    // Parse slot name to get base number (e.g. L1-A-01 -> A-01)
+    int firstDash = slotNames[index].indexOf('-');
+    String shortSlotName = slotNames[index].substring(firstDash + 1);
+    
+    FirebaseJson content;
+    String timestamp = getTimestamp();
+    
+    // Create the structure requested
+    content.set("fields/lastUpdated/timestampValue", timestamp);
+    // Integer values in Firestore REST API can be passed as strings or we use integerValue but actually stringified int in the raw JSON
+    content.set("fields/levelNumber/integerValue", String(slotLevels[index]));
+    content.set("fields/sensorId/stringValue", "SENSOR-" + shortSlotName);
+    content.set("fields/sensorLastUpdate/timestampValue", timestamp);
+    content.set("fields/sensorStatus/stringValue", "ONLINE");
+    content.set("fields/slotNumber/stringValue", shortSlotName);
+    content.set("fields/status/stringValue", isOccupied ? "OCCUPIED" : "AVAILABLE");
+
+    Serial.print("Updating Firestore document: ");
+    Serial.println(documentPath);
+    
+    // Use Patch document to update only specified fields or create if not exist
+    if (Firebase.Firestore.patchDocument(&fbdo, FIREBASE_PROJECT_ID, "", documentPath.c_str(), content.raw(), "")) {
+      Serial.println("✓ Firestore update success");
+    } else {
+      Serial.print("✗ Firestore update failed: ");
+      Serial.println(fbdo.errorReason());
+    }
+  } else {
+    Serial.println("✗ Firebase not ready, skipping update");
+  }
+}
+
 void setup() {
   Serial.begin(115200);
   delay(500);
   
   Serial.println("\n╔════════════════════════════════════════╗");
   Serial.println("║  SMART PARKING MANAGEMENT SYSTEM       ║");
-  Serial.println("║  9-Slot Configuration                  ║");
+  Serial.println("║  9-Slot Configuration (Firebase)       ║");
   Serial.println("║  Author: Naveen Sanjaya                ║");
   Serial.println("╚════════════════════════════════════════╝\n");
+
+  // Connect to WiFi
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  Serial.print("Connecting to WiFi");
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("\n✓ WiFi connected");
+  
+  // Sync time
+  initTime();
+  
+  // Initialize Firebase
+  Serial.println("Initializing Firebase...");
+  config.api_key = FIREBASE_API_KEY;
+  auth.user.email = USER_EMAIL;
+  auth.user.password = USER_PASSWORD;
+  
+  // Assign the callback function for the long running token generation task
+  config.token_status_callback = tokenStatusCallback;
+
+  Firebase.begin(&config, &auth);
+  Firebase.reconnectWiFi(true);
 
   // Initialize sensor pins
   Serial.println("Initializing sensors...");
@@ -168,14 +278,8 @@ void loop() {
       }
       strip.show();
       
-      // JSON output for backend integration
-      Serial.print("JSON: {\"slot\":\"");
-      Serial.print(slotNames[i]);
-      Serial.print("\",\"status\":\"");
-      Serial.print(isOccupied ? "OCCUPIED" : "AVAILABLE");
-      Serial.print("\",\"distance\":");
-      Serial.print(distance);
-      Serial.println("}");
+      // Update Firebase
+      updateFirestore(i, isOccupied);
     }
     
     delay(50); // Small delay between sensor readings
