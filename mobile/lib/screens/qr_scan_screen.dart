@@ -6,6 +6,8 @@ import 'package:mobile/services/pricing_service.dart';
 import 'package:mobile/screens/active_parking_session_screen.dart';
 import 'package:mobile/screens/payment_successful_screen.dart';
 import 'package:mobile/utils/ui_utils.dart';
+import 'package:provider/provider.dart';
+import 'package:mobile/providers/parking_provider.dart';
 
 class QrScanScreen extends StatefulWidget {
   const QrScanScreen({super.key});
@@ -30,11 +32,10 @@ class _QrScanScreenState extends State<QrScanScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFF0B1220),
-      body: StreamBuilder<List<ParkingSessionModel>>(
-        stream: _parkingService.getUserActiveSessions(userId),
-        builder: (context, sessionSnapshot) {
-          final bool hasActiveSession = sessionSnapshot.hasData && sessionSnapshot.data!.isNotEmpty;
-          final activeSession = hasActiveSession ? sessionSnapshot.data!.first : null;
+      body: Consumer<ParkingProvider>(
+        builder: (context, parkingProvider, _) {
+          final bool hasActiveSession = parkingProvider.activeSessions.isNotEmpty;
+          final activeSession = hasActiveSession ? parkingProvider.activeSessions.first : null;
 
           return StreamBuilder<Map<String, String>>(
             stream: _parkingService.watchGateTokens(),

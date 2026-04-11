@@ -1,26 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/constants/app_colors.dart';
 import 'package:mobile/models/pricing_rate_model.dart';
-import 'package:mobile/services/pricing_service.dart';
+import 'package:provider/provider.dart';
+import 'package:mobile/providers/pricing_provider.dart';
 
 class ViewRatesScreen extends StatelessWidget {
   const ViewRatesScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final PricingService service = PricingService();
-
     return Scaffold(
       backgroundColor: const Color(0xFFF6F7FB),
       body: SafeArea(
-        child: StreamBuilder<Map<String, PricingRateModel?>>(
-          stream: service.watchAllRates(),
-          builder: (context, snapshot) {
-            final isConnected =
-                snapshot.connectionState == ConnectionState.active ||
-                snapshot.connectionState == ConnectionState.done;
-            final rates = snapshot.data ?? {};
-            final isLoading = snapshot.connectionState == ConnectionState.waiting;
+        child: Consumer<PricingProvider>(
+          builder: (context, provider, _) {
+            final isConnected = !provider.isLoading;
+            final rates = provider.rates;
+            final isLoading = provider.isLoading;
 
             return Column(
               children: [
@@ -52,7 +48,7 @@ class ViewRatesScreen extends StatelessWidget {
                                 vehicleType: 'bike',
                                 label: 'Bike',
                                 icon: Icons.pedal_bike,
-                                accentColor: const Color(0xFF10B981),
+                                accentColor: const Color(0xFF8B5CF6),
                                 rate: rates['bike'],
                               ),
                               const SizedBox(height: 14),
@@ -358,17 +354,14 @@ class _VehicleRateCard extends StatelessWidget {
                 children: [
                   Icon(Icons.update, size: 13, color: Colors.grey.shade400),
                   const SizedBox(width: 5),
-                  Text(
-                    'Last updated: $effectiveStr',
-                    style: TextStyle(fontSize: 11, color: Colors.grey.shade400),
-                  ),
-                  if (rate?.adminEmail != null) ...[
-                    const SizedBox(width: 6),
-                    Text(
-                      '· by ${rate!.adminEmail}',
+                  Expanded(
+                    child: Text(
+                      'Last updated: $effectiveStr${rate?.adminEmail != null ? ' · by ${rate!.adminEmail}' : ''}',
                       style: TextStyle(fontSize: 11, color: Colors.grey.shade400),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
                     ),
-                  ],
+                  ),
                 ],
               ),
             ),

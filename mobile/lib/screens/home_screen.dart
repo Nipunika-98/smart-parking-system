@@ -1,13 +1,16 @@
 
 import 'package:flutter/material.dart';
 import 'package:mobile/constants/app_colors.dart';
-import 'package:mobile/models/user_model.dart';
 import 'package:mobile/screens/level_detail.dart';
 import 'package:mobile/screens/qr_scan_screen.dart';
 import 'package:mobile/services/auth_service.dart';
-import 'package:mobile/services/parking_service.dart';
 import 'package:mobile/services/user_service.dart';
+import 'package:mobile/services/notification_service.dart';
 import 'package:mobile/models/parking_slot.dart';
+import 'package:mobile/utils/ui_utils.dart';
+import 'package:provider/provider.dart';
+import 'package:mobile/providers/user_provider.dart';
+import 'package:mobile/providers/parking_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -18,65 +21,65 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final AuthService _authService = AuthService();
-  final ParkingService _parkingService = ParkingService();
-  final UserService _userService = UserService();
 
-  UserModel? _userProfile;
+  final UserService _userService = UserService();
+  final NotificationService _notificationService = NotificationService();
 
   @override
   void initState() {
     super.initState();
-    _loadUserProfile();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initAndLoadProfile();
+    });
   }
 
-  Future<void> _loadUserProfile() async {
+  Future<void> _initAndLoadProfile() async {
     final uid = _authService.currentUser?.uid;
     if (uid == null) return;
     try {
-      final profile = await _userService.getUserProfile(uid);
-      if (mounted) setState(() => _userProfile = profile);
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      if (userProvider.user == null) {
+        await userProvider.loadUser(uid);
+      }
+      
+      final profile = userProvider.user;
+      if (profile != null && profile.isFirstLogin) {
+        await _handleFirstLogin(uid);
+        await userProvider.loadUser(uid); // Refresh profile after update
+      }
     } catch (_) {}
+  }
+
+  Future<void> _handleFirstLogin(String uid) async {
+    try {
+      // 1. Send Welcome Notification
+      await _notificationService.sendWelcomeNotification(uid);
+      
+      // 2. Update user profile to mark first login as complete
+      await _userService.updateUserProfile(uid, {'isFirstLogin': false});
+      
+      // 3. Show a welcome SnackBar
+      if (mounted) {
+        UIUtils.showSnackBar(
+          context, 
+          'Welcome to SmartPark! 🚗 We are glad to have you here.',
+          isError: false,
+        );
+      }
+    } catch (e) {
+      debugPrint('Error handling first login: $e');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF6F7FB),
-      floatingActionButton: Container(
-        padding: const EdgeInsets.all(2),
-        decoration: BoxDecoration(
-          gradient: AppColors.primaryGradient,
-          borderRadius: BorderRadius.circular(30),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.2),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: FloatingActionButton.extended(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const QrScanScreen()),
-            );
-          },
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          icon: const Icon(Icons.qr_code_scanner, color: Colors.white),
-          label: const Text('Scan QR', style: TextStyle(color: Colors.white)),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-        ),
-      ),
-
-      body: SafeArea(
-        child: StreamBuilder<List<ParkingSlotModel>>(
-          stream: _parkingService.getAllSlots(),
-          builder: (context, snapshot) {
-            final slots = snapshot.data ?? [];
-            final isLive = snapshot.connectionState == ConnectionState.active ||
-                snapshot.connectionState == ConnectionState.done;
+    return Material(
+      color: const Color(0xFFF6F7FB),
+      child: SafeArea(
+        child: Consumer<ParkingProvider>(
+          builder: (context, parkingProvider, _) {
+            final slots = parkingProvider.slots;
+            final isLive = !parkingProvider.isLoadingSlots;
 
             // Group by section letter — matches dashboard logic exactly:
             // A/B → Level 1, C/D → Level 2, E/F → Level 3
@@ -107,7 +110,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 0, (sum, l) => sum + (l['available'] as int));
 
             return SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 160),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -135,7 +138,10 @@ class _HomeScreenState extends State<HomeScreen> {
   // ---------------- UI Components ----------------
 
   Widget _buildHeaderCard(String totalAvailable, {bool isLive = false}) {
-    final displayName = _userProfile?.name ?? 
+    final userProvider = Provider.of<UserProvider>(context);
+    final userProfile = userProvider.user;
+
+    final displayName = userProfile?.name ?? 
         (_authService.currentUser?.uid != null
             ? 'USR-${_authService.currentUser!.uid.substring(0, 8)}'
             : 'Loading...');

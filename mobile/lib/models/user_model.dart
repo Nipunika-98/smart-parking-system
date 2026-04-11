@@ -7,6 +7,7 @@ class UserModel {
   final String phoneNumber;
   final DateTime registrationDate;
   final bool isActive;
+  final bool isFirstLogin;
 
   UserModel({
     required this.userId,
@@ -15,6 +16,7 @@ class UserModel {
     required this.phoneNumber,
     required this.registrationDate,
     required this.isActive,
+    this.isFirstLogin = true,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json, String documentId) {
@@ -25,6 +27,7 @@ class UserModel {
       phoneNumber: json['phoneNumber'] ?? '',
       registrationDate: (json['registrationDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
       isActive: json['isActive'] ?? true,
+      isFirstLogin: json['isFirstLogin'] ?? true,
     );
   }
 
@@ -35,6 +38,7 @@ class UserModel {
       'phoneNumber': phoneNumber,
       'registrationDate': Timestamp.fromDate(registrationDate),
       'isActive': isActive,
+      'isFirstLogin': isFirstLogin,
     };
   }
 }

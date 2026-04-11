@@ -104,9 +104,6 @@ class ParkingService {
 
       DocumentReference docRef = await _firestore.collection('parking_sessions').add(newSession.toJson());
 
-      // Mark slot as OCCUPIED
-      await updateSlotStatus(slotId, 'OCCUPIED');
-
       return ParkingSessionModel.fromJson(newSession.toJson(), docRef.id);
     } catch (e) {
       throw Exception('Failed to create session: $e');
@@ -128,9 +125,6 @@ class ParkingService {
         'paymentStatus': paymentStatus,
         'paymentTime': paymentStatus == 'PAID' ? FieldValue.serverTimestamp() : null,
       });
-
-      // Free up the slot
-      await updateSlotStatus(sessionData['slotId'], 'AVAILABLE');
       
     } catch (e) {
       throw Exception('Failed to end session: $e');

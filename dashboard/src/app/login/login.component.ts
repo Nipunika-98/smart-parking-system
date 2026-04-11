@@ -1,8 +1,9 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../services/auth.service';
+import { filter, take } from 'rxjs';
 
 @Component({
   selector: 'app-login',
@@ -11,7 +12,7 @@ import { AuthService } from '../services/auth.service';
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss'
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   passwordVisible = false;
   email = '';
   password = '';
@@ -22,6 +23,18 @@ export class LoginComponent {
   
   private router = inject(Router);
   private authService = inject(AuthService);
+
+  ngOnInit(): void {
+    // If already logged in, redirect to dashboard
+    this.authService.authInitialized$.pipe(
+      filter(initialized => initialized === true),
+      take(1)
+    ).subscribe(() => {
+      if (this.authService.isLoggedIn()) {
+        this.router.navigate(['/dashboard']);
+      }
+    });
+  }
 
   togglePasswordVisibility(): void {
     this.passwordVisible = !this.passwordVisible;

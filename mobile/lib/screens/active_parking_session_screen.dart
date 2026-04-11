@@ -3,10 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:mobile/constants/app_colors.dart';
 import 'package:mobile/screens/bottom_navigation.dart';
 import 'package:mobile/services/auth_service.dart';
-import 'package:mobile/services/parking_service.dart';
 import 'package:mobile/models/parking_session_model.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/screens/qr_scan_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:mobile/providers/parking_provider.dart';
 
 class ActiveParkingSessionScreen extends StatefulWidget {
   const ActiveParkingSessionScreen({super.key});
@@ -17,9 +18,7 @@ class ActiveParkingSessionScreen extends StatefulWidget {
 
 class _ActiveParkingSessionScreenState extends State<ActiveParkingSessionScreen> {
   final AuthService _authService = AuthService();
-  final ParkingService _parkingService = ParkingService();
 
-  late Stream<List<ParkingSessionModel>> _sessionStream;
   Timer? _timer;
   Duration _elapsed = Duration.zero;
   DateTime? _entryTime;
@@ -27,12 +26,6 @@ class _ActiveParkingSessionScreenState extends State<ActiveParkingSessionScreen>
   @override
   void initState() {
     super.initState();
-    final uid = _authService.currentUser?.uid;
-    if (uid != null) {
-      _sessionStream = _parkingService.getUserActiveSessions(uid);
-    } else {
-      _sessionStream = const Stream.empty();
-    }
   }
 
   @override
@@ -60,13 +53,9 @@ class _ActiveParkingSessionScreenState extends State<ActiveParkingSessionScreen>
       body: SafeArea(
         child: _authService.currentUser == null
             ? const Center(child: Text('Not logged in'))
-            : StreamBuilder<List<ParkingSessionModel>>(
-                stream: _sessionStream,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            : Consumer<ParkingProvider>(
+                builder: (context, provider, _) {
+                  if (provider.activeSessions.isEmpty) {
                     return ListView(
                       children: [
                         _buildHeader(context),
@@ -81,7 +70,7 @@ class _ActiveParkingSessionScreenState extends State<ActiveParkingSessionScreen>
                     );
                   }
 
-                  final session = snapshot.data!.first;
+                  final session = provider.activeSessions.first;
 
                   // Start/sync timer if entry time changed
                   if (_entryTime == null || _entryTime != session.entryTime) {

@@ -3,7 +3,9 @@ import 'package:mobile/constants/app_colors.dart';
 import 'package:mobile/models/notification_model.dart';
 import 'package:mobile/screens/global_screens/notification_state.dart' show unreadCountNotifier;
 import 'package:mobile/services/notification_service.dart';
-import 'package:mobile/services/auth_service.dart';
+import 'package:provider/provider.dart';
+import 'package:mobile/providers/notification_provider.dart';
+import 'package:mobile/providers/user_provider.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -14,8 +16,12 @@ class NotificationsScreen extends StatefulWidget {
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
   final NotificationService _notificationService = NotificationService();
-  final AuthService _authService = AuthService();
   List<NotificationModel> _currentNotifications = [];
+
+  @override
+  void initState() {
+    super.initState();
+  }
 
   String _formatTime(DateTime time) {
     final diff = DateTime.now().difference(time);
@@ -42,49 +48,79 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           children: [
             _buildHeader(),
             Expanded(
-              child: _authService.currentUser == null
-                ? const Center(child: Text('Not logged in'))
-                : StreamBuilder<List<NotificationModel>>(
-                    stream: _notificationService.getUserNotifications(_authService.currentUser!.uid),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-                      if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                        return const Center(child: Text('No notifications yet.'));
-                      }
-                      
-                      _currentNotifications = snapshot.data!;
-                      WidgetsBinding.instance.addPostFrameCallback((_) {
-                        unreadCountNotifier.value = _currentNotifications.where((n) => n.isUnread).length;
-                      });
+              child: Consumer2<NotificationProvider, UserProvider>(
+                builder: (context, notifProvider, userProvider, child) {
+                  if (notifProvider.isLoading || userProvider.isLoading) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
 
-                      return ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: _currentNotifications.length,
-                        itemBuilder: (context, index) {
-                          final notification = _currentNotifications[index];
-                          return Dismissible(
-                            key: ValueKey(notification.notificationId),
-                            direction: DismissDirection.endToStart,
-                            background: Container(
-                              alignment: Alignment.centerRight,
-                              padding: const EdgeInsets.only(right: 20),
-                              decoration: BoxDecoration(
-                                color: Colors.amber.shade600,
-                                borderRadius: BorderRadius.circular(16),
+                  final user = userProvider.user;
+                  if (user == null) {
+                    return const Center(child: Text('Not logged in'));
+                  }
+
+                  final registrationDate = user.registrationDate;
+
+                  var filteredList = notifProvider.notifications;
+                  
+                  filteredList = filteredList.where((n) {
+                    return n.timestamp.isAfter(registrationDate) || 
+                           n.timestamp.isAtSameMomentAs(registrationDate);
+                  }).toList();
+
+                  if (filteredList.isEmpty) {
+                    return const Center(child: Text('No notifications yet.'));
+                  }
+
+                  _currentNotifications = filteredList;
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    unreadCountNotifier.value = _currentNotifications.where((n) => n.isUnread).length;
+                  });
+
+                  return ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: _currentNotifications.length,
+                    itemBuilder: (context, index) {
+                      final notification = _currentNotifications[index];
+                      return Dismissible(
+                        key: ValueKey(notification.notificationId),
+                        direction: DismissDirection.endToStart,
+                        background: Container(
+                          alignment: Alignment.centerRight,
+                          padding: const EdgeInsets.only(right: 20),
+                          decoration: BoxDecoration(
+                            color: Colors.red.shade600,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: const Icon(Icons.delete_outline, color: Colors.white),
+                        ),
+                        onDismissed: (_) {
+                          final deletedNotification = notification;
+                          _notificationService.deleteNotification(notification.notificationId);
+                          
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: const Text('Notification deleted'),
+                                behavior: SnackBarBehavior.fixed,
+                                action: SnackBarAction(
+                                  label: 'UNDO',
+                                  textColor: Colors.amber,
+                                  onPressed: () {
+                                    _notificationService.restoreNotification(deletedNotification);
+                                  },
+                                ),
                               ),
-                              child: const Icon(Icons.mark_email_read, color: Colors.white),
-                            ),
-                            onDismissed: (_) {
-                               _notificationService.markAsRead(notification.notificationId);
-                            },
-                            child: _notificationCard(notification),
-                          );
+                            );
+                          }
                         },
+                        child: _notificationCard(notification),
                       );
                     },
-                  ),
+                  );
+                },
+              ),
             ),
             _markAllReadButton(),
           ],

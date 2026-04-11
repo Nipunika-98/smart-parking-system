@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/constants/app_colors.dart';
+import 'package:mobile/models/vehicle_model.dart';
 import 'package:mobile/services/vehicle_service.dart';
 import 'package:mobile/services/auth_service.dart';
-import 'package:mobile/models/vehicle_model.dart';
+import 'package:mobile/models/user_model.dart';
 import 'package:mobile/utils/ui_utils.dart';
 
 class AddVehicleScreen extends StatefulWidget {
@@ -11,29 +12,90 @@ class AddVehicleScreen extends StatefulWidget {
   final String? plateNumber;
   final bool isPrimary;
 
-  const AddVehicleScreen({super.key, this.vehicleId, this.vehicleType, this.plateNumber, this.isPrimary = false});
+  const AddVehicleScreen({
+    super.key,
+    this.vehicleId,
+    this.vehicleType,
+    this.plateNumber,
+    this.isPrimary = false,
+  });
 
   @override
   State<AddVehicleScreen> createState() => _AddVehicleScreenState();
 }
 
 class _AddVehicleScreenState extends State<AddVehicleScreen> {
-  final TextEditingController plateController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final VehicleService _vehicleService = VehicleService();
   final AuthService _authService = AuthService();
 
-  bool isPrimary = true;
+  final TextEditingController plateController = TextEditingController();
+  final TextEditingController typeController = TextEditingController();
+  late bool isPrimary;
+  final _plateFocus = FocusNode();
+
   String? selectedVehicleType;
   bool _isLoading = false;
+  bool _isFirstVehicle = false;
+  UserModel? _pendingUser;
 
   @override
   void initState() {
     super.initState();
-    if (widget.plateNumber != null) {
-      plateController.text = widget.plateNumber!;
-      selectedVehicleType = widget.vehicleType;
-      isPrimary = widget.isPrimary;
+    plateController.text = widget.plateNumber ?? '';
+    typeController.text = widget.vehicleType ?? 'Car';
+    selectedVehicleType = widget.vehicleType;
+    isPrimary = widget.isPrimary;
+
+    _plateFocus.addListener(() => _onFocusChange(_plateFocus, plateController));
+
+    // Check for pending registration data
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final args = ModalRoute.of(context)?.settings.arguments;
+      if (args is UserModel) {
+        setState(() {
+          _pendingUser = args;
+          _isFirstVehicle = true;
+          isPrimary = true;
+        });
+      } else {
+        _checkIsFirstVehicle();
+      }
+    });
+  }
+
+  void _onFocusChange(FocusNode node, TextEditingController controller) {
+    if (node.hasFocus && controller.text.isNotEmpty) {
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (!controller.selection.isCollapsed) {
+          controller.selection = TextSelection.collapsed(
+            offset: controller.selection.extentOffset,
+          );
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    plateController.dispose();
+    typeController.dispose();
+    _plateFocus.dispose();
+    super.dispose();
+  }
+
+  Future<void> _checkIsFirstVehicle() async {
+    final user = _authService.currentUser;
+    if (user != null) {
+      if (widget.vehicleId == null) {
+        final vehicles = await _vehicleService.getUserVehicles(user.uid).first;
+        if (vehicles.isEmpty) {
+          setState(() {
+            _isFirstVehicle = true;
+            isPrimary = true;
+          });
+        }
+      }
     }
   }
 
@@ -49,6 +111,56 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
         return Icons.electric_rickshaw;
       default:
         return Icons.directions_car;
+    }
+  }
+
+  Future<void> _submitVehicle() async {
+    if (_formKey.currentState!.validate()) {
+      setState(() => _isLoading = true);
+      try {
+        final user = _authService.currentUser;
+        if (user == null) throw Exception('No user logged in');
+
+        if (widget.vehicleId != null) {
+          // Update existing
+          await _vehicleService.updateVehicle(widget.vehicleId!, {
+            'vehiclePlateNo': plateController.text.trim(),
+            'vehicleType': selectedVehicleType,
+            'isPrimary': isPrimary,
+            'userId': user.uid,
+          });
+        } else {
+          // If this is a new registration, save the user profile first
+          if (_pendingUser != null) {
+            await _authService.createUserProfile(_pendingUser!);
+          }
+
+          // Add new vehicle
+          VehicleModel newVehicle = VehicleModel(
+            vehicleId: '',
+            userId: user.uid,
+            vehicleType: selectedVehicleType ?? 'Car',
+            vehiclePlateNo: plateController.text.trim(),
+            isPrimary: isPrimary,
+            registrationDate: DateTime.now(),
+            isActive: true,
+          );
+          await _vehicleService.addVehicle(newVehicle);
+        }
+
+        if (!mounted) return;
+        UIUtils.showSnackBar(
+          context,
+          widget.vehicleId != null ? 'Vehicle Updated' : 'Vehicle Added',
+          isError: false,
+        );
+        Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+      } catch (e) {
+        if (!mounted) return;
+        UIUtils.showSnackBar(context, UIUtils.getFriendlyErrorMessage(e), isError: true);
+      } finally {
+        if (mounted) setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -123,7 +235,23 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                 // Plate Number
                 _buildLabel('Plate Number'),
                 TextFormField(
+                  key: const ValueKey('plateNumberField'),
                   controller: plateController,
+                  focusNode: _plateFocus,
+                  textCapitalization: TextCapitalization.characters,
+                  autocorrect: false,
+                  enableSuggestions: false,
+                  textInputAction: TextInputAction.done,
+                  onFieldSubmitted: (_) => _submitVehicle(),
+                  onTap: () {
+                    Future.delayed(const Duration(milliseconds: 100), () {
+                      if (!plateController.selection.isCollapsed) {
+                        plateController.selection = TextSelection.collapsed(
+                          offset: plateController.selection.extentOffset,
+                        );
+                      }
+                    });
+                  },
                   decoration: _inputDecoration(hint: 'ABC-1234', icon: Icons.confirmation_number),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -154,20 +282,12 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                     children: [
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
+                        children: [
                           Text(
                             'Set as Primary Vehicle',
                             style: TextStyle(
                               fontWeight: FontWeight.w600,
-                              color: AppColors.primaryColor,
-                            ),
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            'Use this vehicle by default',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Color.fromARGB(255, 112, 112, 112),
+                              color: _isFirstVehicle ? Colors.grey : AppColors.primaryColor,
                             ),
                           ),
                         ],
@@ -175,15 +295,19 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                       Switch(
                         value: isPrimary,
                         thumbColor: WidgetStateProperty.resolveWith<Color>(
-                          (states) => states.contains(WidgetState.selected)
-                              ? AppColors.primaryColor
-                              : Colors.grey,
+                          (states) =>
+                              states.contains(WidgetState.selected)
+                                  ? (_isFirstVehicle ? Colors.grey : AppColors.primaryColor)
+                                  : Colors.grey,
                         ),
-                        onChanged: (value) {
-                          setState(() {
-                            isPrimary = value;
-                          });
-                        },
+                        onChanged:
+                            _isFirstVehicle
+                                ? null
+                                : (value) {
+                                  setState(() {
+                                    isPrimary = value;
+                                  });
+                                },
                       ),
                     ],
                   ),
@@ -200,7 +324,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Text(
-                    'Your primary vehicle will be selected by default when creating parking sessions.',
+                    'Your primary vehicle will be selected by default when creating an account.',
                     style: TextStyle(color: Colors.white),
                   ),
                 ),
@@ -209,83 +333,37 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
 
                 // Add Vehicle button
                 ElevatedButton(
-                  onPressed: _isLoading ? null : () async {
-                    if (_formKey.currentState!.validate()) {
-                      setState(() => _isLoading = true);
-                      try {
-                        final user = _authService.currentUser;
-                        if (user == null) throw Exception('No user logged in');
-
-                        if (widget.vehicleId != null) {
-                          // Update existing
-                          await _vehicleService.updateVehicle(widget.vehicleId!, {
-                            'vehiclePlateNo': plateController.text.trim(),
-                            'vehicleType': selectedVehicleType,
-                            'isPrimary': isPrimary,
-                            'userId': user.uid,
-                          });
-                        } else {
-                          // Add new
-                          VehicleModel newVehicle = VehicleModel(
-                            vehicleId: '',
-                            userId: user.uid,
-                            vehicleType: selectedVehicleType ?? 'Car',
-                            vehiclePlateNo: plateController.text.trim(),
-                            isPrimary: isPrimary,
-                            registrationDate: DateTime.now(),
-                            isActive: true,
-                          );
-                          await _vehicleService.addVehicle(newVehicle);
-                        }
-
-                        if (!context.mounted) return;
-                        UIUtils.showSnackBar(
-                          context,
-                          widget.vehicleId != null ? 'Vehicle Updated' : 'Vehicle Added',
-                          isError: false,
-                        );
-                        Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
-                      } catch (e) {
-                         if (!context.mounted) return;
-                         UIUtils.showSnackBar(
-                           context,
-                           UIUtils.getFriendlyErrorMessage(e),
-                           isError: true,
-                         );
-                      } finally {
-                        if (mounted) setState(() => _isLoading = false);
-                      }
-                    }
-                  },
+                  onPressed: _isLoading ? null : _submitVehicle,
                   style: ElevatedButton.styleFrom(
                     minimumSize: const Size.fromHeight(52),
                     backgroundColor: AppColors.primaryColor,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                   ),
-                  child: _isLoading 
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : Text(
-                          widget.vehicleId != null ? 'Update Vehicle' : 'Add Vehicle',
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
+                  child:
+                      _isLoading
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : Text(
+                            widget.vehicleId != null ? 'Update Vehicle' : 'Add Vehicle',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
                 ),
 
                 const SizedBox(height: 16),
 
                 // Skip
-                Center(
-                  child: TextButton(
-                    onPressed: () {
-                      Navigator.pushNamed(context, '/home');
-                    },
-
-                    child: const Text(
-                      'Skip for now',
-                      style: TextStyle(color: Color.fromARGB(255, 112, 112, 112)),
+                if (_pendingUser == null)
+                  Center(
+                    child: TextButton(
+                      onPressed: () {
+                        Navigator.pushNamed(context, '/home');
+                      },
+                      child: const Text(
+                        'Skip for now',
+                        style: TextStyle(color: Color.fromARGB(255, 112, 112, 112)),
+                      ),
                     ),
                   ),
-                ),
               ],
             ),
           ),

@@ -16,16 +16,44 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final AuthService _authService = AuthService();
+
+  final _currentFocus = FocusNode();
+  final _newFocus = FocusNode();
+  final _confirmFocus = FocusNode();
+
+  bool _isLoading = false;
   bool _obscureCurrent = true;
   bool _obscureNew = true;
   bool _obscureConfirm = true;
-  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentFocus.addListener(() => _onFocusChange(_currentFocus, _currentPasswordController));
+    _newFocus.addListener(() => _onFocusChange(_newFocus, _newPasswordController));
+    _confirmFocus.addListener(() => _onFocusChange(_confirmFocus, _confirmPasswordController));
+  }
+
+  void _onFocusChange(FocusNode node, TextEditingController controller) {
+    if (node.hasFocus && controller.text.isNotEmpty) {
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (!controller.selection.isCollapsed) {
+          controller.selection = TextSelection.collapsed(
+            offset: controller.selection.extentOffset,
+          );
+        }
+      });
+    }
+  }
 
   @override
   void dispose() {
     _currentPasswordController.dispose();
     _newPasswordController.dispose();
     _confirmPasswordController.dispose();
+    _currentFocus.dispose();
+    _newFocus.dispose();
+    _confirmFocus.dispose();
     super.dispose();
   }
 
@@ -47,9 +75,15 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         }
       } catch (e) {
         if (mounted) {
+          String errorMessage = UIUtils.getFriendlyErrorMessage(e);
+          // Customize message for incorrect current password
+          if (errorMessage.toLowerCase().contains('password') || 
+              errorMessage.toLowerCase().contains('credential')) {
+            errorMessage = 'Please enter correct password';
+          }
           UIUtils.showSnackBar(
             context,
-            UIUtils.getFriendlyErrorMessage(e),
+            errorMessage,
             isError: true,
           );
         }
@@ -96,23 +130,39 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               ),
               const SizedBox(height: 30),
               _buildPasswordField(
-                controller: _currentPasswordController,
+                keyName: 'currentPasswordField',
                 label: 'Current Password',
-                obscureText: _obscureCurrent,
+                controller: _currentPasswordController,
+                focusNode: _currentFocus,
+                obscure: _obscureCurrent,
                 onToggle: () => setState(() => _obscureCurrent = !_obscureCurrent),
               ),
               const SizedBox(height: 20),
               _buildPasswordField(
-                controller: _newPasswordController,
+                keyName: 'newPasswordField',
                 label: 'New Password',
-                obscureText: _obscureNew,
+                controller: _newPasswordController,
+                focusNode: _newFocus,
+                obscure: _obscureNew,
                 onToggle: () => setState(() => _obscureNew = !_obscureNew),
+                validator: (value) {
+                  if (value == null || value.isEmpty) return 'Please enter a new password';
+                  if (value.length < 8) return 'Minimum 8 characters required';
+                  if (!RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$').hasMatch(value)) {
+                    return 'Must include a-z, A-Z, and numbers';
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 20),
               _buildPasswordField(
-                controller: _confirmPasswordController,
+                keyName: 'confirmPasswordField',
                 label: 'Confirm New Password',
-                obscureText: _obscureConfirm,
+                controller: _confirmPasswordController,
+                focusNode: _confirmFocus,
+                obscure: _obscureConfirm,
+                textInputAction: TextInputAction.done,
+                onFieldSubmitted: (_) => _updatePassword(),
                 onToggle: () => setState(() => _obscureConfirm = !_obscureConfirm),
                 validator: (value) {
                   if (value != _newPasswordController.text) {
@@ -154,11 +204,15 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   }
 
   Widget _buildPasswordField({
-    required TextEditingController controller,
+    required String keyName,
     required String label,
-    required bool obscureText,
+    required TextEditingController controller,
+    required bool obscure,
     required VoidCallback onToggle,
+    FocusNode? focusNode,
     String? Function(String?)? validator,
+    TextInputAction textInputAction = TextInputAction.next,
+    void Function(String)? onFieldSubmitted,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -173,8 +227,23 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         ),
         const SizedBox(height: 8),
         TextFormField(
+          key: ValueKey(keyName),
           controller: controller,
-          obscureText: obscureText,
+          focusNode: focusNode,
+          obscureText: obscure,
+          textInputAction: textInputAction,
+          onFieldSubmitted: onFieldSubmitted,
+          autocorrect: false,
+          enableSuggestions: false,
+          onTap: () {
+            Future.delayed(const Duration(milliseconds: 100), () {
+              if (!controller.selection.isCollapsed) {
+                controller.selection = TextSelection.collapsed(
+                  offset: controller.selection.extentOffset,
+                );
+              }
+            });
+          },
           decoration: InputDecoration(
             filled: true,
             fillColor: Colors.white,
@@ -185,7 +254,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             suffixIcon: IconButton(
               icon: Icon(
-                obscureText ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined,
                 color: Colors.grey,
               ),
               onPressed: onToggle,
@@ -195,7 +264,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               validator ??
               (value) {
                 if (value == null || value.isEmpty) {
-                  return 'Please enter your password';
+                  return 'Enter your password';
                 }
                 return null;
               },

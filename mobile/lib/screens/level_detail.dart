@@ -1,15 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/constants/app_colors.dart';
-import 'package:mobile/services/parking_service.dart';
 import 'package:mobile/models/parking_slot.dart';
+import 'package:provider/provider.dart';
+import 'package:mobile/providers/parking_provider.dart';
 
-// ---------------------------------------------------------------------------
-// Data helpers — mirrors dashboard slot-management logic exactly
-// ---------------------------------------------------------------------------
 
-/// Derive vehicle type from slotNumber (e.g. "A-03", "B-07")
-/// Sections A, C, E → cars (1-5) or 3wheel (6-10)
-/// Sections B, D, F → cars (1-5) or bike  (6-10)
 String _slotType(String slotNumber) {
   final parts = slotNumber.split('-');
   if (parts.length < 2) return 'car';
@@ -35,8 +30,6 @@ class LevelDetailScreen extends StatefulWidget {
 }
 
 class _LevelDetailScreenState extends State<LevelDetailScreen> {
-  final ParkingService _parkingService = ParkingService();
-
   /// Selected vehicle-type filter: 'car' | 'bike' | '3wheel' | 'all'
   String _selectedType = 'all';
 
@@ -59,14 +52,15 @@ class _LevelDetailScreenState extends State<LevelDetailScreen> {
     final zones = <_ZoneData>[];
     final sortedSections = grouped.keys.toList()..sort();
     for (final section in sortedSections) {
-      final sectionSlots = grouped[section]!
-        ..sort((a, b) => a.slotNumber.compareTo(b.slotNumber));
-      zones.add(_ZoneData(
-        section: section,
-        name: _zoneName(section),
-        left: sectionSlots.take(5).toList(),
-        right: sectionSlots.skip(5).toList(),
-      ));
+      final sectionSlots = grouped[section]!..sort((a, b) => a.slotNumber.compareTo(b.slotNumber));
+      zones.add(
+        _ZoneData(
+          section: section,
+          name: _zoneName(section),
+          left: sectionSlots.take(5).toList(),
+          right: sectionSlots.skip(5).toList(),
+        ),
+      );
     }
     return zones;
   }
@@ -80,38 +74,52 @@ class _LevelDetailScreenState extends State<LevelDetailScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF6F7FB),
       body: SafeArea(
-        child: StreamBuilder<List<ParkingSlotModel>>(
-          stream: _parkingService.getSlotsByLevelSections(_levelInt),
-          builder: (context, snapshot) {
-            final slots = snapshot.data ?? [];
+        child: Consumer<ParkingProvider>(
+          builder: (context, provider, _) {
+            final allSlots = provider.slots;
+            final List<String> targetSections = _levelInt == 1
+                ? ['A', 'B']
+                : _levelInt == 2
+                    ? ['C', 'D']
+                    : ['E', 'F'];
+
+            final slots = allSlots.where((s) {
+              final sec = s.slotNumber.split('-').first.toUpperCase();
+              return targetSections.contains(sec);
+            }).toList();
+
             final zones = _buildZones(slots);
 
             // Filter zones / slots by selected vehicle type
-            final displayedZones = zones.map((z) {
-              final filteredLeft = _filterSlots(z.left);
-              final filteredRight = _filterSlots(z.right);
-              return _ZoneData(
-                section: z.section,
-                name: z.name,
-                left: filteredLeft,
-                right: filteredRight,
-              );
-            }).where((z) => z.left.isNotEmpty || z.right.isNotEmpty).toList();
+            final displayedZones =
+                zones
+                    .map((z) {
+                      final filteredLeft = _filterSlots(z.left);
+                      final filteredRight = _filterSlots(z.right);
+                      return _ZoneData(
+                        section: z.section,
+                        name: z.name,
+                        left: filteredLeft,
+                        right: filteredRight,
+                      );
+                    })
+                    .where((z) => z.left.isNotEmpty || z.right.isNotEmpty)
+                    .toList();
 
             return Column(
               children: [
                 _buildHeader(context, slots),
                 Expanded(
-                  child: snapshot.connectionState == ConnectionState.waiting
-                      ? const Center(child: CircularProgressIndicator())
-                      : displayedZones.isEmpty
+                  child:
+                      provider.isLoadingSlots
+                          ? const Center(child: CircularProgressIndicator())
+                          : displayedZones.isEmpty
                           ? _buildEmpty()
                           : ListView.builder(
-                              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-                              itemCount: displayedZones.length,
-                              itemBuilder: (_, i) =>
-                                  _buildZoneCard(displayedZones[i]),
-                            ),
+                            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                            itemCount: displayedZones.length,
+                            itemBuilder: (_, i) => _buildZoneCard(displayedZones[i]),
+                          ),
                 ),
                 _buildLegend(),
                 const SizedBox(height: 16),
@@ -134,8 +142,7 @@ class _LevelDetailScreenState extends State<LevelDetailScreen> {
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
       decoration: BoxDecoration(
         gradient: AppColors.primaryGradient,
-        borderRadius:
-            const BorderRadius.vertical(bottom: Radius.circular(28)),
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(28)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -154,12 +161,11 @@ class _LevelDetailScreenState extends State<LevelDetailScreen> {
                   Text(
                     widget.levelName,
                     style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold),
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                  const Text('Parking Availability',
-                      style: TextStyle(color: Colors.white70, fontSize: 13)),
                 ],
               ),
             ],
@@ -219,20 +225,24 @@ class _LevelDetailScreenState extends State<LevelDetailScreen> {
           ),
           child: Column(
             children: [
-              Icon(icon,
-                  color: isActive ? AppColors.primaryColor : Colors.white,
-                  size: 22),
+              Icon(icon, color: isActive ? AppColors.primaryColor : Colors.white, size: 22),
               const SizedBox(height: 4),
-              Text(label,
-                  style: TextStyle(
-                      color: isActive ? AppColors.primaryColor : Colors.white,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 11)),
-              Text(count.toString(),
-                  style: TextStyle(
-                      color: isActive ? AppColors.teal : Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18)),
+              Text(
+                label,
+                style: TextStyle(
+                  color: isActive ? AppColors.primaryColor : Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 11,
+                ),
+              ),
+              Text(
+                count.toString(),
+                style: TextStyle(
+                  color: isActive ? AppColors.teal : Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+              ),
             ],
           ),
         ),
@@ -242,10 +252,8 @@ class _LevelDetailScreenState extends State<LevelDetailScreen> {
 
   // ── ZONE CARD ─────────────────────────────────────────────────────────────
   Widget _buildZoneCard(_ZoneData zone) {
-    final availableCount = [
-      ...zone.left,
-      ...zone.right,
-    ].where((s) => s.status == 'AVAILABLE').length;
+    final availableCount =
+        [...zone.left, ...zone.right].where((s) => s.status == 'AVAILABLE').length;
     final totalCount = zone.left.length + zone.right.length;
 
     return Container(
@@ -255,9 +263,10 @@ class _LevelDetailScreenState extends State<LevelDetailScreen> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withValues(alpha: 0.08),
-              blurRadius: 12,
-              offset: const Offset(0, 6))
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
         ],
       ),
       child: Column(
@@ -265,40 +274,38 @@ class _LevelDetailScreenState extends State<LevelDetailScreen> {
         children: [
           // Zone header bar
           Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
               color: AppColors.primaryColor.withValues(alpha: 0.06),
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(20)),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
             ),
             child: Row(
               children: [
                 Text(
                   zone.name,
                   style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
-                      color: AppColors.primaryColor),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                    color: AppColors.primaryColor,
+                  ),
                 ),
                 const Spacer(),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: availableCount > 0
-                        ? AppColors.teal.withValues(alpha: 0.12)
-                        : const Color(0xFFE5E1E6),
+                    color:
+                        availableCount > 0
+                            ? AppColors.teal.withValues(alpha: 0.12)
+                            : const Color(0xFFE5E1E6),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
                     '$availableCount / $totalCount available',
                     style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: availableCount > 0
-                            ? AppColors.teal
-                            : Colors.grey.shade600),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: availableCount > 0 ? AppColors.teal : Colors.grey.shade600,
+                    ),
                   ),
                 ),
               ],
@@ -326,9 +333,7 @@ class _LevelDetailScreenState extends State<LevelDetailScreen> {
     if (slots.isEmpty) {
       return const SizedBox.shrink();
     }
-    return Column(
-      children: slots.map((slot) => _slotTile(slot, isLeft: isLeft)).toList(),
-    );
+    return Column(children: slots.map((slot) => _slotTile(slot, isLeft: isLeft)).toList());
   }
 
   Widget _slotTile(ParkingSlotModel slot, {required bool isLeft}) {
@@ -354,10 +359,7 @@ class _LevelDetailScreenState extends State<LevelDetailScreen> {
       height: 52,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: _slotBorderColor(status, type),
-          width: 1.5,
-        ),
+        border: Border.all(color: _slotBorderColor(status, type), width: 1.5),
         color: _slotBgColor(status, type),
       ),
       child: ClipRRect(
@@ -365,8 +367,7 @@ class _LevelDetailScreenState extends State<LevelDetailScreen> {
         child: Stack(
           children: [
             // Maintenance stripe overlay
-            if (status == 'MAINTENANCE')
-              Positioned.fill(child: _maintenanceStripes()),
+            if (status == 'MAINTENANCE') Positioned.fill(child: _maintenanceStripes()),
 
             // Content: icon + label
             Row(
@@ -397,20 +398,20 @@ class _LevelDetailScreenState extends State<LevelDetailScreen> {
     if (status == 'MAINTENANCE') return const Color(0xFFFCD34D); // amber base
     // OCCUPIED
     if (type == 'bike') return const Color(0xFF3B82F6); // blue
-    return const Color(0xFF1E293B);                     // dark navy (car / 3wheel)
+    return const Color(0xFF1E293B); // dark navy (car / 3wheel)
   }
 
   Color _slotBorderColor(String status, String type) {
     if (status == 'AVAILABLE') return const Color(0xFFE2E8F0);
     if (status == 'MAINTENANCE') return const Color(0xFFD97706); // amber border
-    if (type == 'bike') return const Color(0xFF2563EB);          // darker blue
-    return const Color(0xFF0F172A);                              // darkest navy
+    if (type == 'bike') return const Color(0xFF2563EB); // darker blue
+    return const Color(0xFF0F172A); // darkest navy
   }
 
   Color _slotFgColor(String status, String type) {
-    if (status == 'AVAILABLE') return const Color(0xFF475569);   // slate
+    if (status == 'AVAILABLE') return const Color(0xFF475569); // slate
     if (status == 'MAINTENANCE') return const Color(0xFF92400E); // dark amber
-    return Colors.white;                                          // white on dark/blue
+    return Colors.white; // white on dark/blue
   }
 
   /// Diagonal amber stripe pattern matching the dashboard `.maintenance` CSS
@@ -425,21 +426,19 @@ class _LevelDetailScreenState extends State<LevelDetailScreen> {
       child: Column(
         children: const [
           SizedBox(height: 4),
-          Text('IN',
-              style: TextStyle(
-                  fontSize: 9,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.black38)),
+          Text(
+            'IN',
+            style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: Colors.black38),
+          ),
           SizedBox(height: 6),
           Icon(Icons.arrow_downward, size: 14, color: Colors.black26),
           SizedBox(height: 60),
           Icon(Icons.arrow_downward, size: 14, color: Colors.black26),
           SizedBox(height: 6),
-          Text('OUT',
-              style: TextStyle(
-                  fontSize: 9,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.black38)),
+          Text(
+            'OUT',
+            style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: Colors.black38),
+          ),
         ],
       ),
     );
@@ -455,9 +454,10 @@ class _LevelDetailScreenState extends State<LevelDetailScreen> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 6,
-              offset: const Offset(0, 2)),
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
         ],
       ),
       child: Row(
@@ -481,11 +481,7 @@ class _LevelDetailScreenState extends State<LevelDetailScreen> {
     );
   }
 
-  Widget _legendDivider() => Container(
-        width: 1,
-        height: 24,
-        color: const Color(0xFFE2E8F0),
-      );
+  Widget _legendDivider() => Container(width: 1, height: 24, color: const Color(0xFFE2E8F0));
 
   Widget _legendItem({
     required Color color,
@@ -502,23 +498,22 @@ class _LevelDetailScreenState extends State<LevelDetailScreen> {
           decoration: BoxDecoration(
             color: color,
             borderRadius: BorderRadius.circular(4),
-            border: borderColor != null
-                ? Border.all(color: borderColor, width: 1.5)
-                : null,
+            border: borderColor != null ? Border.all(color: borderColor, width: 1.5) : null,
           ),
-          child: swatchTextColor != null
-              ? Center(
-                  child: Icon(Icons.directions_car,
-                      size: 12, color: swatchTextColor),
-                )
-              : null,
+          child:
+              swatchTextColor != null
+                  ? Center(child: Icon(Icons.directions_car, size: 12, color: swatchTextColor))
+                  : null,
         ),
         const SizedBox(width: 6),
-        Text(label,
-            style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: Color(0xFF475569))),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: Color(0xFF475569),
+          ),
+        ),
       ],
     );
   }
@@ -546,11 +541,12 @@ class _LevelDetailScreenState extends State<LevelDetailScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.local_parking_outlined,
-              size: 64, color: Colors.grey.shade300),
+          Icon(Icons.local_parking_outlined, size: 64, color: Colors.grey.shade300),
           const SizedBox(height: 12),
-          Text('No slots found for ${widget.levelName}',
-              style: TextStyle(color: Colors.grey.shade500)),
+          Text(
+            'No slots found for ${widget.levelName}',
+            style: TextStyle(color: Colors.grey.shade500),
+          ),
         ],
       ),
     );
@@ -565,12 +561,7 @@ class _ZoneData {
   final List<ParkingSlotModel> left;
   final List<ParkingSlotModel> right;
 
-  _ZoneData({
-    required this.section,
-    required this.name,
-    required this.left,
-    required this.right,
-  });
+  _ZoneData({required this.section, required this.name, required this.left, required this.right});
 }
 
 // ── Stripe painter for Maintenance slots ─────────────────────────────────────
@@ -585,12 +576,13 @@ class _StripePainter extends CustomPainter {
     final paintB = Paint()..color = const Color(0xFFF59E0B); // dark amber
     double x = -size.height;
     while (x < size.width + size.height) {
-      final path = Path()
-        ..moveTo(x, size.height)
-        ..lineTo(x + stripeWidth, size.height)
-        ..lineTo(x + stripeWidth + size.height, 0)
-        ..lineTo(x + size.height, 0)
-        ..close();
+      final path =
+          Path()
+            ..moveTo(x, size.height)
+            ..lineTo(x + stripeWidth, size.height)
+            ..lineTo(x + stripeWidth + size.height, 0)
+            ..lineTo(x + size.height, 0)
+            ..close();
       canvas.drawPath(path, (x ~/ stripeWidth).isEven ? paintA : paintB);
       x += stripeWidth;
     }

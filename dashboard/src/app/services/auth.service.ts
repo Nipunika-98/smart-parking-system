@@ -12,10 +12,16 @@ export class AuthService {
   private router = inject(Router);
   private userSubject = new BehaviorSubject<User | null>(null);
   user$: Observable<User | null> = this.userSubject.asObservable();
+  
+  private authInitialized = new BehaviorSubject<boolean>(false);
+  authInitialized$ = this.authInitialized.asObservable();
 
   constructor() {
     onAuthStateChanged(auth, (user) => {
       this.userSubject.next(user);
+      if (!this.authInitialized.value) {
+        this.authInitialized.next(true);
+      }
     });
   }
 
@@ -108,6 +114,10 @@ export class AuthService {
 
   isLoggedIn(): boolean {
     return !!this.userSubject.value;
+  }
+
+  isInitialized(): boolean {
+    return this.authInitialized.value;
   }
 
   async getAdminDetails(uid: string): Promise<any> {

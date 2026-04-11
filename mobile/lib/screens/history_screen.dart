@@ -5,8 +5,10 @@ import 'package:mobile/models/pricing_rate_model.dart';
 import 'package:mobile/models/parking_slot.dart';
 import 'package:mobile/services/auth_service.dart';
 import 'package:mobile/services/parking_service.dart';
-import 'package:mobile/services/pricing_service.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import 'package:mobile/providers/pricing_provider.dart';
+import 'package:mobile/providers/parking_provider.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -18,7 +20,6 @@ class HistoryScreen extends StatefulWidget {
 class _HistoryScreenState extends State<HistoryScreen> {
   final AuthService _authService = AuthService();
   final ParkingService _parkingService = ParkingService();
-  final PricingService _pricingService = PricingService();
 
   String _selectedFilter = 'All';
 
@@ -32,17 +33,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF6F7FB),
       body: SafeArea(
-        child: StreamBuilder<Map<String, PricingRateModel?>>(
-          stream: _pricingService.watchAllRates(),
-          builder: (context, rateSnapshot) {
-            final rates = rateSnapshot.data ?? {};
+        child: Consumer2<PricingProvider, ParkingProvider>(
+          builder: (context, pricingProvider, parkingProvider, _) {
+            final rates = pricingProvider.rates;
+            final slots = parkingProvider.slots;
 
-            return StreamBuilder<List<ParkingSlotModel>>(
-              stream: _parkingService.getAllSlots(),
-              builder: (context, slotSnapshot) {
-                final slots = slotSnapshot.data ?? [];
-                // Map slotId -> slotNumber
-                final slotMap = {for (var s in slots) s.slotId: s.slotNumber};
+            // Map slotId -> slotNumber
+            final slotMap = {for (var s in slots) s.slotId: s.slotNumber};
 
                 return StreamBuilder<List<ParkingSessionModel>>(
                   stream: _parkingService.getUserSessionHistory(userId),
@@ -77,8 +74,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     );
                   },
                 );
-              },
-            );
           },
         ),
       ),
@@ -105,19 +100,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Parking History',
-                style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: Colors.white12, borderRadius: BorderRadius.circular(12)),
-                child: const Icon(Icons.history, color: Colors.white, size: 20),
-              ),
-            ],
+          const Text(
+            'Parking History',
+            style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 20),
           Row(
@@ -306,13 +291,23 @@ class _HistoryScreenState extends State<HistoryScreen> {
       child: Row(
         children: [
           Icon(icon, size: 14, color: Colors.black26),
-          const SizedBox(width: 6),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(DateFormat('h:mm a').format(time), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-              Text(DateFormat('MMM d').format(time), style: const TextStyle(fontSize: 10, color: Colors.grey)),
-            ],
+          const SizedBox(width: 4),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  DateFormat('h:mm a').format(time),
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  DateFormat('MMM d').format(time),
+                  style: const TextStyle(fontSize: 10, color: Colors.grey),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
           ),
         ],
       ),
