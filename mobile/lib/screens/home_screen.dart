@@ -38,10 +38,15 @@ class _HomeScreenState extends State<HomeScreen> {
     if (uid == null) return;
     try {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
-      if (userProvider.user == null) {
-        await userProvider.loadUser(uid);
+
+      // Wait briefly for UserProvider to finish loading (it auto-loads via ProxyProvider)
+      if (userProvider.isLoading) {
+        await Future.doWhile(() async {
+          await Future.delayed(const Duration(milliseconds: 100));
+          return userProvider.isLoading;
+        });
       }
-      
+
       final profile = userProvider.user;
       if (profile != null && profile.isFirstLogin) {
         await _handleFirstLogin(uid);

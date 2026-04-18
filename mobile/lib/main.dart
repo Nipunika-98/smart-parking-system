@@ -25,8 +25,15 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
-        ChangeNotifierProvider(create: (_) => UserProvider()),
-        ChangeNotifierProvider(create: (_) => PricingProvider()),
+        ChangeNotifierProxyProvider<AuthProvider, UserProvider>(
+          create: (_) => UserProvider(),
+          update: (_, auth, previous) => previous!..updateUserId(auth.user?.uid),
+        ),
+        ChangeNotifierProxyProvider<AuthProvider, PricingProvider>(
+          create: (_) => PricingProvider(),
+          update: (_, auth, previous) =>
+              previous!..updateAuth(auth.isAuthenticated),
+        ),
         ChangeNotifierProxyProvider<AuthProvider, VehicleProvider>(
           create: (_) => VehicleProvider(),
           update: (_, auth, previous) => previous!..updateUserId(auth.user?.uid),

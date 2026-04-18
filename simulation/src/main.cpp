@@ -15,8 +15,8 @@
 // Insert your Firebase credentials here
 #define FIREBASE_API_KEY "AIzaSyB0-PX-my1Y4cquM66ZK2yvR7cvFFrXAwo"
 #define FIREBASE_PROJECT_ID "smartparkingsystem-e8234"
-#define USER_EMAIL "naveensanjayab@gmail.com"
-#define USER_PASSWORD "naveen123"
+#define USER_EMAIL "nimal@smartpark.lk"
+#define USER_PASSWORD "NimalSt1"
 
 // WiFi Credentials (Wokwi default)
 #define WIFI_SSID "Wokwi-GUEST"
@@ -36,9 +36,9 @@ const int echoPins[NUM_SLOTS] = {35, 34, 23, 16, 4, 22, 17, 5, 18};
 
 // Slot names representing different levels
 const String slotNames[NUM_SLOTS] = {
-  "L1-A-01", "L1-A-02", "L1-B-03", 
-  "L2-C-01", "L2-D-02", "L2-D-03", 
-  "L3-E-01", "L3-E-02", "L3-F-03"
+  "L1-A-01", "L1-A-07", "L1-B-03", 
+  "L2-C-03", "L2-D-05", "L2-D-10", 
+  "L3-E-04", "L3-E-09", "L3-F-02"
 };
 
 // Level mapping for the slots
@@ -127,7 +127,8 @@ void printStatus() {
 
 void updateFirestore(int index, bool isOccupied) {
   if (Firebase.ready()) {
-    String documentPath = "parking_slots/" + slotNames[index];
+    String documentPath = "parking_slots/";
+    documentPath += slotNames[index];
     
     // Parse slot name to get base number (e.g. L1-A-01 -> A-01)
     int firstDash = slotNames[index].indexOf('-');
@@ -140,7 +141,9 @@ void updateFirestore(int index, bool isOccupied) {
     content.set("fields/lastUpdated/timestampValue", timestamp);
     // Integer values in Firestore REST API can be passed as strings or we use integerValue but actually stringified int in the raw JSON
     content.set("fields/levelNumber/integerValue", String(slotLevels[index]));
-    content.set("fields/sensorId/stringValue", "SENSOR-" + shortSlotName);
+    String sensorId = "SENSOR-";
+    sensorId += shortSlotName;
+    content.set("fields/sensorId/stringValue", sensorId);
     content.set("fields/sensorLastUpdate/timestampValue", timestamp);
     content.set("fields/sensorStatus/stringValue", "ONLINE");
     content.set("fields/slotNumber/stringValue", shortSlotName);

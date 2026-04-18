@@ -1,8 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SidebarComponent } from '../sidebar/sidebar.component';
 import { db } from '../firebase.config';
-import { collection, onSnapshot, doc, updateDoc } from 'firebase/firestore';
+import { collection, onSnapshot, doc, updateDoc, Unsubscribe } from 'firebase/firestore';
 
 @Component({
   selector: 'app-parking-slot-management',
@@ -11,7 +11,9 @@ import { collection, onSnapshot, doc, updateDoc } from 'firebase/firestore';
   templateUrl: './parking-slot-management.component.html',
   styleUrl: './parking-slot-management.component.scss'
 })
-export class ParkingSlotManagementComponent implements OnInit {
+export class ParkingSlotManagementComponent implements OnInit, OnDestroy {
+  private unsubscribeSlots?: Unsubscribe;
+
   selectedLevel = 'Level 1';
   selectedFilter = 'All';
 
@@ -27,9 +29,15 @@ export class ParkingSlotManagementComponent implements OnInit {
     this.setupRealtimeListener();
   }
 
+  ngOnDestroy() {
+    if (this.unsubscribeSlots) {
+      this.unsubscribeSlots();
+    }
+  }
+
   setupRealtimeListener() {
     try {
-      onSnapshot(collection(db, 'parking_slots'), (snap) => {
+      this.unsubscribeSlots = onSnapshot(collection(db, 'parking_slots'), (snap) => {
         const slots = snap.docs.map(doc => ({ ...(doc.data() as any), docId: doc.id }));
         
         const grouped: { [key: string]: any[] } = {
