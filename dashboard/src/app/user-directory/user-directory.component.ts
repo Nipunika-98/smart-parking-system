@@ -205,7 +205,7 @@ export class UserDirectoryComponent implements OnInit {
           await this.userService.addUser(userData);
         }
 
-        await this.loadUsers(); // Refresh the list
+        await this.loadUsers();
         this.closeModal();
       } catch (error) {
         console.error('Failed to create/update user:', error);

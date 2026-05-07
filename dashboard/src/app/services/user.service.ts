@@ -1,11 +1,11 @@
 import { Injectable } from '@angular/core';
 import { db } from '../firebase.config';
-import { 
-  collection, 
-  getDocs, 
-  addDoc, 
-  deleteDoc, 
-  doc, 
+import {
+  collection,
+  getDocs,
+  addDoc,
+  deleteDoc,
+  doc,
   updateDoc,
   query,
   where,
@@ -32,7 +32,7 @@ export class UserService {
 
   async getUsers(): Promise<User[]> {
     const querySnapshot = await getDocs(collection(db, this.collectionName));
-    
+
     // Fetch users first
     const usersData = querySnapshot.docs.map(docSnapshot => {
       const data = docSnapshot.data() as any;
@@ -42,7 +42,7 @@ export class UserService {
     // Resolve all primary vehicles concurrently
     const usersWithVehicles = await Promise.all(usersData.map(async (data: any) => {
       let mappedVehicle = data['vehicle'] || data['licensePlate'] || data['primaryVehicle'] || 'N/A';
-      
+
       // Attempt to find primary vehicle in the vehicles collection
       try {
         const vQuery = query(
@@ -59,9 +59,9 @@ export class UserService {
         console.error(`Failed to fetch vehicle for user ${data.id}`, error);
       }
 
-      const mappedName = data['name'] || data['fullName'] || data['displayName'] || 
-                         ((data['firstName'] || '') + ' ' + (data['lastName'] || '')).trim() || 'Unknown User';
-                         
+      const mappedName = data['name'] || data['fullName'] || data['displayName'] ||
+        ((data['firstName'] || '') + ' ' + (data['lastName'] || '')).trim() || 'Unknown User';
+
       const mappedPhone = data['phone'] || data['phoneNumber'] || 'N/A';
       const mappedStatus = data['status'] || 'Active';
       const mappedMemberType = data['memberType'] || data['role'] || 'Standard Member';
@@ -83,11 +83,11 @@ export class UserService {
   }
 
   async addUser(user: Partial<User>): Promise<void> {
-    const data = { 
+    const data = {
       ...user,
-      createdAt: serverTimestamp() // Add registration timestamp for statistics
+      createdAt: serverTimestamp()
     };
-    delete data.id; // Ensure we don't save the id within the document fields
+    delete data.id;
     await addDoc(collection(db, this.collectionName), data);
   }
 

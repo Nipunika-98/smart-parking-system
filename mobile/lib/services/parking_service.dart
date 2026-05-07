@@ -111,20 +111,24 @@ class ParkingService {
   }
 
   // End Parking Session (User scans Exit QR and pays)
-  Future<void> endSession(String sessionId, String exitScannedBy, String paymentStatus) async {
+  Future<void> endSession(String sessionId, String exitScannedBy, String paymentStatus, {double? totalAmount}) async {
     try {
       // Get the session to find the slotId
       DocumentSnapshot sessionDoc = await _firestore.collection('parking_sessions').doc(sessionId).get();
       if (!sessionDoc.exists) throw Exception('Session not found');
 
-      final sessionData = sessionDoc.data() as Map<String, dynamic>;
-      
-      await _firestore.collection('parking_sessions').doc(sessionId).update({
+      final updateData = <String, dynamic>{
         'exitTime': FieldValue.serverTimestamp(),
         'exitScannedBy': exitScannedBy,
         'paymentStatus': paymentStatus,
         'paymentTime': paymentStatus == 'PAID' ? FieldValue.serverTimestamp() : null,
-      });
+      };
+
+      if (totalAmount != null) {
+        updateData['totalAmount'] = totalAmount;
+      }
+      
+      await _firestore.collection('parking_sessions').doc(sessionId).update(updateData);
       
     } catch (e) {
       throw Exception('Failed to end session: $e');

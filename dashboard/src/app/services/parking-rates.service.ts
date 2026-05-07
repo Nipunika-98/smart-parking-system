@@ -1,26 +1,21 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { db } from '../firebase.config';
 import { 
   collection, 
   doc, 
   getDoc, 
   getDocs, 
-  setDoc, 
-  updateDoc, 
   query, 
   where,
-  deleteField,
   addDoc,
   serverTimestamp,
-  orderBy,
-  limit,
   deleteDoc
 } from 'firebase/firestore';
 
 export interface ParkingRate {
   id?: string;
-  vehicleType: string; // car, bike, or threeWheeler
-  type: string;        // Display name: Car, Bike, etc.
+  vehicleType: string; 
+  type: string;        
   plan: string;
   status: string;
   firstHour: number;
@@ -81,7 +76,6 @@ export class ParkingRatesService {
       ...rate,
       effectiveDate: serverTimestamp()
     };
-    // remove current ID if any to ensure new doc is created
     delete data.id; 
     await addDoc(collection(db, this.collectionName), data);
   }

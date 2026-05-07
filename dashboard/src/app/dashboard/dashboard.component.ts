@@ -83,48 +83,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   };
 
   // Recent Activity Data
-  activities: Activity[] = [
-    {
-      type: 'success',
-      iconUrl: '',
-      title: 'ABC-1234',
-      description: 'Entered at L1-A04',
-      time: '2 mins ago',
-      timestampMs: Date.now() - 120000
-    },
-    {
-      type: 'info',
-      iconUrl: '',
-      title: 'XYZ-9876',
-      description: 'Paid LKR 450.00 • 2h 15m',
-      time: '5 mins ago',
-      timestampMs: Date.now() - 300000
-    },
-    {
-      type: 'success',
-      iconUrl: '',
-      title: 'LMN-4567',
-      description: 'Entered at L2-B11',
-      time: '12 mins ago',
-      timestampMs: Date.now() - 720000
-    },
-    {
-      type: 'error',
-      iconUrl: '',
-      title: 'Gate 2 Malfunction',
-      description: 'Status: critical',
-      time: '15 mins ago',
-      timestampMs: Date.now() - 900000
-    },
-    {
-      type: 'info',
-      iconUrl: '',
-      title: 'JKL-3322',
-      description: 'Paid LKR 200.00 • 45m',
-      time: '22 mins ago',
-      timestampMs: Date.now() - 1320000
-    }
-  ];
+  activities: Activity[] = [];
 
   activeTimeFilter: 'Today' | 'Week' | 'Month' = 'Week';
 
@@ -163,7 +122,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.pendingPayments.count = pending;
     this.pendingPayments.label = `${pending} sessions active`;
 
-    // Trigger chart update with mock distributions for now based on actual total
     this.updateCharts(total);
   }
 
@@ -198,7 +156,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   async setupListeners() {
-    // Fetch rates first
     const carRate = await this.ratesService.getLatestRate('car');
     const bikeRate = await this.ratesService.getLatestRate('bike');
     const threeWheelerRate = await this.ratesService.getLatestRate('threeWheeler');
@@ -232,14 +189,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
         const exitTime = data['exitTime']?.toDate ? data['exitTime'].toDate() : null;
         const status = data['paymentStatus'] || 'PENDING';
         
-        // Calculate amount - use actual storage value if PAID, or estimate if PENDING
         let amount = data['amount'] || data['totalAmount'] || 0;
         
         if (amount === 0 && entryTime) {
           const end = exitTime || new Date();
           const durationHrs = Math.ceil((end.getTime() - entryTime.getTime()) / 3600000);
           
-          // Use real rates or fallback
           const rate = this.rates['car'] || { firstHour: 100, subsequentHour: 100 };
           amount = rate.firstHour + (Math.max(0, durationHrs - 1) * rate.subsequentHour);
         }
@@ -255,7 +210,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   private updateActivities() {
-    // Generate an event for each session's entry, and an event for exit if PAID
     const events: Activity[] = [];
     const now = new Date();
 

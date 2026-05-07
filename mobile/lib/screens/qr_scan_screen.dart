@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/models/parking_session_model.dart';
+import 'package:mobile/models/parking_slot.dart';
 import 'package:mobile/services/auth_service.dart';
 import 'package:mobile/services/parking_service.dart';
 import 'package:mobile/services/pricing_service.dart';
@@ -239,8 +240,36 @@ class _QrScanScreenState extends State<QrScanScreen> {
         final slotSnapshot = await _parkingService.getAllSlots().first; 
         final slotMap = {for (var s in slotSnapshot) s.slotId: s.slotNumber};
 
+        // Calculate amount to freeze it
+        final slotNumber = slotMap[activeSession!.slotId] ?? 'A-01';
+        final vehicleType = ParkingSlotModel.getVehicleType(slotNumber);
+        final rate = rates.firstWhere(
+          (r) => r.vehicleType == vehicleType,
+          orElse: () => rates.first,
+        );
+
+        final exitTime = DateTime.now();
+        final duration = exitTime.difference(activeSession.entryTime);
+        final hours = (duration.inMinutes / 60.0).ceil();
+
+        double calculatedAmount = 0.0;
+        if (hours > 0) {
+          calculatedAmount = rate.firstHour;
+          if (hours > 1) {
+            calculatedAmount += (hours - 1) * rate.subsequentHour;
+          }
+          if (calculatedAmount > rate.dailyMax && rate.dailyMax > 0) {
+            calculatedAmount = rate.dailyMax;
+          }
+        }
+
         // 2. End session - Initial status is PENDING until admin confirms
-        await _parkingService.endSession(activeSession!.sessionId, 'gate_exit_qr', 'PENDING');
+        await _parkingService.endSession(
+          activeSession.sessionId, 
+          'gate_exit_qr', 
+          'PENDING', 
+          totalAmount: calculatedAmount,
+        );
         
         if (!context.mounted) return;
         Navigator.pushReplacement(

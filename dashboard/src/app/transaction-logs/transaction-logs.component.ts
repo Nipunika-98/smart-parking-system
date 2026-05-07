@@ -9,7 +9,7 @@ import { AuthService } from '../services/auth.service';
 import { inject } from '@angular/core';
 
 interface Transaction {
-  id: string; // Document ID
+  id: string; 
   ticketNumber: string;
   userName: string;
   dateTime: string;
@@ -173,7 +173,7 @@ export class TransactionLogsComponent implements OnInit, OnDestroy {
     
     this.showQrModal = true;
 
-    // Ideally, we'd save these tokens to a `qr_config` document so the IoT scanners know the week's valid code!
+    // save these tokens to a `qr_config` document so the IoT scanners know the week's valid code!
     setDoc(doc(db, 'system_config', 'current_gate_qrs'), {
       entryToken: entryToken,
       exitToken: exitToken,
@@ -198,7 +198,6 @@ export class TransactionLogsComponent implements OnInit, OnDestroy {
       })
       .catch(err => {
         console.error("Download failed:", err);
-        // Fallback: open in new tab so user can CTRL+S / CMD+S natively
         window.open(url, '_blank');
       });
   }

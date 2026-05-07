@@ -64,8 +64,6 @@ export class ParkingSlotManagementComponent implements OnInit, OnDestroy {
             } else {
               state = type === 'car' ? 'filled-dark' : `filled-${type === '3wheel' ? '3wheel' : 'bikes'}`;
             }
-
-            // We store docId so we can update the correct document on click
             if (grouped[section]) {
               grouped[section].push({ 
                 id: slotNumber, 
@@ -105,8 +103,6 @@ export class ParkingSlotManagementComponent implements OnInit, OnDestroy {
     return this.allZones.filter(z => z.level === this.selectedLevel);
   }
 
-
-
   selectLevel(level: string) {
     this.selectedLevel = level;
     this.updateCounts();
@@ -129,7 +125,7 @@ export class ParkingSlotManagementComponent implements OnInit, OnDestroy {
     let nextStatus = 'AVAILABLE';
     if (slot.rawStatus === 'AVAILABLE') nextStatus = 'OCCUPIED';
     else if (slot.rawStatus === 'OCCUPIED') nextStatus = 'MAINTENANCE';
-    else nextStatus = 'AVAILABLE'; // cycle from MAINTENANCE to AVAILABLE
+    else nextStatus = 'AVAILABLE'; 
 
     try {
       const docRef = doc(db, 'parking_slots', slot.docId);

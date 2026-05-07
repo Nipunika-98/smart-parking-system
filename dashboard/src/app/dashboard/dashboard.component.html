@@ -17,10 +17,7 @@
             </div>
         </div>
 
-        <!-- The rest of the dashboard content will go here -->
         <div class="dashboard-content">
-
-            <!-- Statistics Cards Grid -->
             <div class="stats-grid">
                 <!-- Available Slots -->
                 <div class="stat-card border-green">
@@ -81,10 +78,12 @@
                     <div class="stat-header">
                         <h3>Total Revenue</h3>
                         <div class="icon slate">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                              <rect x="2" y="6" width="20" height="12" rx="2"></rect>
-                              <circle cx="12" cy="12" r="2"></circle>
-                              <path d="M6 12h.01M18 12h.01"></path>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <rect x="2" y="6" width="20" height="12" rx="2"></rect>
+                                <circle cx="12" cy="12" r="2"></circle>
+                                <path d="M6 12h.01M18 12h.01"></path>
                             </svg>
                         </div>
                     </div>
@@ -140,21 +139,28 @@
                         @for (activity of activities; track activity.timestampMs + activity.type) {
                         <div class="activity-item">
                             <div class="activity-icon-area">
-                                <div class="status-icon" [ngClass]="{'success': activity.type === 'PENDING', 'info': activity.type === 'PAID'}">
+                                <div class="status-icon"
+                                    [ngClass]="{'success': activity.type === 'PENDING', 'info': activity.type === 'PAID'}">
                                     @if (activity.type === 'PENDING') {
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
                                         <circle cx="12" cy="12" r="10"></circle>
                                         <polyline points="12 6 12 12 16 14"></polyline>
                                     </svg>
                                     }
                                     @if (activity.type === 'PAID') {
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
                                         <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
                                         <polyline points="22 4 12 14.01 9 11.01"></polyline>
                                     </svg>
                                     }
                                     @if (activity.type === 'error' || activity.type === 'OVERDUE') {
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
                                         <circle cx="12" cy="12" r="10"></circle>
                                         <line x1="15" y1="9" x2="9" y2="15"></line>
                                         <line x1="9" y1="9" x2="15" y2="15"></line>

@@ -1,12 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-/// Matches the dashboard `pricing_rates` Firestore document schema exactly.
 class PricingRateModel {
   final String rateId;
-  final String vehicleType;   // 'car' | 'bike' | 'threeWheeler'
-  final String type;          // Display: 'Car' | 'Bike' | 'Three-wheeler'
+  final String vehicleType;   
+  final String type;         
   final String plan;
-  final String status;        // 'Active' | 'Not Set'
+  final String status;       
   final double firstHour;
   final double subsequentHour;
   final double dailyMax;
@@ -14,7 +13,6 @@ class PricingRateModel {
   final DateTime? effectiveDate;
   final String? adminEmail;
 
-  // Getter to support legacy screens still using hourlyRate
   double get hourlyRate => firstHour;
 
   PricingRateModel({

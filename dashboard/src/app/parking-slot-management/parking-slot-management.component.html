@@ -2,33 +2,46 @@
     <app-sidebar class="dashboard-sidebar"></app-sidebar>
     <main class="dashboard-main">
         <div class="parking-management-container">
-            
+
             <!-- Top filter bar -->
             <div class="top-bar">
                 <div class="floor-selector">
                     <span class="label">Floor</span>
                     <div class="pill-group">
-                        <button *ngFor="let level of levels" 
-                                class="pill-btn" 
-                                [class.active]="selectedLevel === level"
-                                (click)="selectLevel(level)">
-                           {{ level }}
+                        <button *ngFor="let level of levels" class="pill-btn" [class.active]="selectedLevel === level"
+                            (click)="selectLevel(level)">
+                            {{ level }}
                         </button>
                     </div>
                 </div>
 
                 <div class="vehicle-filter">
                     <div class="pill-group">
-                        <button *ngFor="let filter of filters" 
-                                class="pill-btn" 
-                                [class.active]="selectedFilter === filter"
-                                (click)="selectFilter(filter)">
-                           <ng-container [ngSwitch]="filter">
-                             <svg *ngSwitchCase="'Cars'" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L16 11l-2.7-3.6a2 2 0 0 0-1.6-.8H8.3a2 2 0 0 0-1.6.8L4 11l-5.16.86a1 1 0 0 0-.84.99V16h3m10 0a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm-10 0a2 2 0 1 1-4 0 2 2 0 0 1 4 0z"/></svg>
-                             <svg *ngSwitchCase="'Bikes'" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M15 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-3 11.5V14l-3-3 4-3 2 3h2"/></svg>
-                             <svg *ngSwitchCase="'3-Wheel'" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="16" width="16" height="6" rx="2"/><path d="M12 16v-6"/><path d="M8 10h8l-4-6-4 6z"/></svg>
-                           </ng-container>
-                           {{ filter }}
+                        <button *ngFor="let filter of filters" class="pill-btn"
+                            [class.active]="selectedFilter === filter" (click)="selectFilter(filter)">
+                            <ng-container [ngSwitch]="filter">
+                                <svg *ngSwitchCase="'Cars'" xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <path
+                                        d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L16 11l-2.7-3.6a2 2 0 0 0-1.6-.8H8.3a2 2 0 0 0-1.6.8L4 11l-5.16.86a1 1 0 0 0-.84.99V16h3m10 0a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm-10 0a2 2 0 1 1-4 0 2 2 0 0 1 4 0z" />
+                                </svg>
+                                <svg *ngSwitchCase="'Bikes'" xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="5.5" cy="17.5" r="3.5" />
+                                    <circle cx="18.5" cy="17.5" r="3.5" />
+                                    <path d="M15 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-3 11.5V14l-3-3 4-3 2 3h2" />
+                                </svg>
+                                <svg *ngSwitchCase="'3-Wheel'" xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="4" y="16" width="16" height="6" rx="2" />
+                                    <path d="M12 16v-6" />
+                                    <path d="M8 10h8l-4-6-4 6z" />
+                                </svg>
+                            </ng-container>
+                            {{ filter }}
                         </button>
                     </div>
                 </div>
@@ -36,8 +49,9 @@
                 <div class="status-summary">
                     <div class="stat"><span class="number">{{ filledCount }}</span> Filled</div>
                     <div class="stat"><span class="number">{{ emptyCount }}</span> Empty</div>
-                    
-                    <button class="btn-report" style="margin-right:8px" (click)="reportProblem()">Report Problem</button>
+
+                    <button class="btn-report" style="margin-right:8px" (click)="reportProblem()">Report
+                        Problem</button>
                 </div>
             </div>
 
@@ -48,13 +62,17 @@
                         <div class="zone-title">{{ zone.name }}</div>
                         <div class="zone-box">
                             <div class="col left">
-                                <div class="slot" *ngFor="let s of zone.left" [ngClass]="s.state" [style.opacity]="isSlotVisible(s) ? 1 : 0.15" (click)="toggleSlotStatus(s)" style="cursor: pointer;">
+                                <div class="slot" *ngFor="let s of zone.left" [ngClass]="s.state"
+                                    [style.opacity]="isSlotVisible(s) ? 1 : 0.15" (click)="toggleSlotStatus(s)"
+                                    style="cursor: pointer;">
                                     <span class="slot-id">{{ s.displayId }}</span>
                                     <div class="slot-visual"></div>
                                 </div>
                             </div>
                             <div class="col right">
-                                <div class="slot" *ngFor="let s of zone.right" [ngClass]="s.state" [style.opacity]="isSlotVisible(s) ? 1 : 0.15" (click)="toggleSlotStatus(s)" style="cursor: pointer;">
+                                <div class="slot" *ngFor="let s of zone.right" [ngClass]="s.state"
+                                    [style.opacity]="isSlotVisible(s) ? 1 : 0.15" (click)="toggleSlotStatus(s)"
+                                    style="cursor: pointer;">
                                     <div class="slot-visual"></div>
                                     <span class="slot-id">{{ s.displayId }}</span>
                                 </div>

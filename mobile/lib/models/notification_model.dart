@@ -29,7 +29,7 @@ class NotificationModel {
 
   factory NotificationModel.fromJson(Map<String, dynamic> json, String documentId) {
     NotificationType parsedType = NotificationType.info;
-    
+
     // Support both 'notificationType' (legacy) and 'type' (dashboard)
     final typeStr = (json['type'] ?? json['notificationType'] ?? '').toString().toLowerCase();
     if (typeStr.contains('payment')) {

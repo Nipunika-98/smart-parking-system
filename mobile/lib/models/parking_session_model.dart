@@ -13,6 +13,7 @@ class ParkingSessionModel {
   final String paymentStatus;
   final String? markerByAdmin;
   final String qrCodeData;
+  final double? totalAmount;
 
   ParkingSessionModel({
     required this.sessionId,
@@ -27,6 +28,7 @@ class ParkingSessionModel {
     required this.paymentStatus,
     this.markerByAdmin,
     required this.qrCodeData,
+    this.totalAmount,
   });
 
   factory ParkingSessionModel.fromJson(Map<String, dynamic> json, String documentId) {
@@ -43,6 +45,7 @@ class ParkingSessionModel {
       paymentStatus: json['paymentStatus'] ?? 'PENDING',
       markerByAdmin: json['markerByAdmin'],
       qrCodeData: json['qrCodeData'] ?? '',
+      totalAmount: (json['totalAmount'] as num?)?.toDouble(),
     );
   }
 
@@ -59,6 +62,7 @@ class ParkingSessionModel {
       'paymentStatus': paymentStatus,
       'markerByAdmin': markerByAdmin,
       'qrCodeData': qrCodeData,
+      'totalAmount': totalAmount,
     };
   }
 }

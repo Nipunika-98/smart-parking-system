@@ -30,10 +30,10 @@ export class SidebarComponent implements OnInit {
   async fetchAdminDetails(uid: string) {
     try {
       const details = await this.authService.getAdminDetails(uid);
-      
+
       // 1. Prioritize Firestore fields
       let name = details?.['adminName'] || details?.['name'] || details?.['displayName'] || details?.['username'];
-      
+
       if (name) {
         this.userName = name;
         console.log(`Admin name found in Firestore: ${name}`);
@@ -41,7 +41,7 @@ export class SidebarComponent implements OnInit {
         // Fallback: use part of email as name
         this.userName = this.userEmail.split('@')[0];
         console.log(`No name in Firestore. Attempting self-healing for: ${this.userName}`);
-        
+
         // SELF-HEALING: If we have a document but no name, or no document, try to create/fix it
         await this.repairProfile(uid, this.userName, this.userEmail);
       }
@@ -58,7 +58,7 @@ export class SidebarComponent implements OnInit {
       // Basic repair logic: Save the name to the UID-based document in 'admins'
       const { doc, setDoc } = await import('firebase/firestore');
       const { db } = await import('../firebase.config');
-      
+
       console.log(`Repairing profile for UID: ${uid}...`);
       await setDoc(doc(db, 'admins', uid), {
         adminName: name,
@@ -66,7 +66,7 @@ export class SidebarComponent implements OnInit {
         role: 'Admin',
         registrationDate: new Date()
       }, { merge: true });
-      
+
       console.log('Profile repaired successfully!');
     } catch (e) {
       console.warn('Could not auto-repair profile:', e);

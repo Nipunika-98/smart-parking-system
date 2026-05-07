@@ -189,6 +189,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
     Map<String, PricingRateModel?> rates,
     Map<String, String> slotMap,
   ) {
+    if (session.totalAmount != null && session.totalAmount! > 0) {
+      return session.totalAmount!;
+    }
+
     final exitTime = session.exitTime ?? DateTime.now();
     final duration = exitTime.difference(session.entryTime);
     final hours = (duration.inMinutes / 60.0).ceil(); // Bill for each chunk

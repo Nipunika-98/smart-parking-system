@@ -31,6 +31,10 @@ class PaymentSuccessfulScreen extends StatelessWidget {
 
   // Calculate billing amount based on vehicle type
   double getCalculatedAmount(ParkingSessionModel currentSession) {
+    if (currentSession.totalAmount != null && currentSession.totalAmount! > 0) {
+      return currentSession.totalAmount!;
+    }
+
     if (rates == null || rates!.isEmpty) return 0.0;
 
     final slotNumber = slotMap?[currentSession.slotId] ?? 'A-01';

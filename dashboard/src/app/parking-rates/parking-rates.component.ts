@@ -69,7 +69,6 @@ export class ParkingRatesComponent implements OnInit {
   async loadRates() {
     this.isLoading = true;
     try {
-      // Fetch latest for each type
       const keys = ['car', 'bike', 'threeWheeler'];
       let foundAny = false;
 
@@ -80,7 +79,7 @@ export class ParkingRatesComponent implements OnInit {
           foundAny = true;
         }
       }
-      
+
       if (!foundAny) {
         console.log('No rates found in DB. Initializing with zeroes...');
         await this.ratesService.initializeDefaultRates(this.rates);
@@ -107,16 +106,14 @@ export class ParkingRatesComponent implements OnInit {
     try {
       this.isLoading = true;
       this.editingRate.status = 'Active';
-      
+
       // Get current admin email
       this.authService.user$.pipe(take(1)).subscribe(async (user) => {
         if (user) {
           this.editingRate.adminEmail = user.email || 'unknown';
         }
-        
-        // Save as NEW document (additive)
         await this.ratesService.saveRate(this.editingRate);
-        
+
         // Refresh the current view
         await this.loadRates();
         this.closeModal();

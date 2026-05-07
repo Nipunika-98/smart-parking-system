@@ -78,7 +78,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
       borderRadius: 4,
       barPercentage: 0.6,
       hoverBackgroundColor: '#0b616d'
-      }]
+    }]
   };
 
   public userChartOptions: ChartConfiguration['options'] = {
@@ -147,7 +147,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
         const status = data['paymentStatus'] || 'PENDING';
         const ticketNumber = data['ticketNumber'] || 'N/A';
         const userId = data['userId'] || 'Unknown';
-        
+
         let amount = 0;
         if (entryTime) {
           const end = exitTime || new Date();
@@ -190,25 +190,18 @@ export class ReportsComponent implements OnInit, OnDestroy {
       }
     });
 
-    // Calculate Global Counts (Always show total regardless of date filter)
+    // Calculate Global Counts 
     this.userStats.totalUsers = this.allUsers.length;
     this.userStats.activeUsers = this.allUsers.filter(u => u.status === 'Active').length;
     this.userStats.bannedUsers = this.allUsers.filter(u => u.status === 'Banned').length;
     this.userStats.newToday = newToday;
-
-    // Filtered list for detailed analysis if needed (currently used for chart/growth)
-    const filtered = this.allUsers.filter(u => {
-      if (!u.createdAt) return true;
-      return u.createdAt >= start && u.createdAt <= end;
-    });
 
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const currentYear = new Date().getFullYear();
     const monthlyData: number[] = new Array(12).fill(0);
 
     this.allUsers.forEach(u => {
-      const date = u.createdAt || new Date(); 
-      // Only plot users for the current year on the fixed month axis
+      const date = u.createdAt || new Date();
       if (date.getFullYear() === currentYear) {
         monthlyData[date.getMonth()] += 1;
       }
@@ -231,11 +224,11 @@ export class ReportsComponent implements OnInit, OnDestroy {
 
     const totalRevenue = filtered.filter(s => s.status === 'PAID').reduce((acc, s) => acc + s.amount, 0);
     const transactionCount = filtered.length;
-    
+
     this.stats.totalRevenue = totalRevenue;
     this.stats.transactionCount = transactionCount;
     this.stats.avgTransaction = transactionCount > 0 ? totalRevenue / transactionCount : 0;
-    
+
     const days = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
     this.stats.dailyAverage = totalRevenue / days;
 
@@ -290,11 +283,11 @@ export class ReportsComponent implements OnInit, OnDestroy {
     link.click();
     document.body.removeChild(link);
 
-    // Log the report generation to Firestore
+    // Log the revenue report generation to Firestore
     try {
       const { auth } = await import('../firebase.config');
       const totalRevenue = filtered.filter(s => s.status === 'PAID').reduce((acc, s) => acc + s.amount, 0);
-      
+
       await addDoc(collection(db, 'reports'), {
         adminId: auth.currentUser?.uid || 'SYSTEM',
         dateFrom: start,
@@ -341,7 +334,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
     link.click();
     document.body.removeChild(link);
 
-    // Log the report generation to Firestore
+    // Log the user statistics report generation to Firestore
     try {
       const { auth } = await import('../firebase.config');
       await addDoc(collection(db, 'reports'), {
