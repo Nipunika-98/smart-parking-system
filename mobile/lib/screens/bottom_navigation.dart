@@ -55,10 +55,7 @@ class _BottomNavigationState extends State<BottomNavigation> {
         ),
         child: FloatingActionButton.extended(
           onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const QrScanScreen()),
-            );
+            Navigator.push(context, MaterialPageRoute(builder: (context) => const QrScanScreen()));
           },
           backgroundColor: Colors.transparent,
           elevation: 0,
@@ -85,7 +82,10 @@ class _BottomNavigationState extends State<BottomNavigation> {
 
         items: [
           const BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          const BottomNavigationBarItem(icon: Icon(Icons.confirmation_number_outlined), label: 'Ticket'),
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.confirmation_number_outlined),
+            label: 'Ticket',
+          ),
           BottomNavigationBarItem(
             icon: Consumer<NotificationProvider>(
               builder: (context, notificationProvider, _) {

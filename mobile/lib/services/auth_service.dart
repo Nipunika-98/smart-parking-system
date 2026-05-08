@@ -8,13 +8,9 @@ class AuthService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
 
-  // Get current user
   User? get currentUser => _auth.currentUser;
-
-  // Stream of auth changes
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
-  // Login
   Future<UserCredential> loginUser(String email, String password) async {
     try {
       return await _auth.signInWithEmailAndPassword(email: email, password: password);
@@ -23,21 +19,19 @@ class AuthService {
     }
   }
 
-  // Change Password
   Future<void> changePassword(String currentPassword, String newPassword) async {
     try {
       final user = _auth.currentUser;
       if (user == null) throw Exception("User not logged in");
       if (user.email == null) throw Exception("User has no email");
-      
+
       // Re-authenticate user before changing password
       AuthCredential credential = EmailAuthProvider.credential(
-        email: user.email!, 
-        password: currentPassword
+        email: user.email!,
+        password: currentPassword,
       );
       await user.reauthenticateWithCredential(credential);
-      
-      // Update password
+
       await user.updatePassword(newPassword);
     } catch (e) {
       throw Exception('Failed to change password: $e');
@@ -53,8 +47,11 @@ class AuthService {
     bool saveToFirestore = true,
   }) async {
     try {
-      UserCredential result = await _auth.createUserWithEmailAndPassword(email: email, password: password);
-      
+      UserCredential result = await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
       if (result.user == null) throw Exception('User creation failed');
 
       UserModel newUser = UserModel(
@@ -65,11 +62,11 @@ class AuthService {
         registrationDate: DateTime.now(),
         isActive: true,
       );
-      
+
       if (saveToFirestore) {
         await createUserProfile(newUser);
       }
-      
+
       return newUser;
     } catch (e) {
       throw Exception('Registration failed: $e');
@@ -96,39 +93,10 @@ class AuthService {
     }
   }
 
-  // // Register Admin (Optional, usually done via backend)
-  // Future<UserCredential> registerAdmin({
-  //   required String name,
-  //   required String email,
-  //   required String password,
-  // }) async {
-  //   try {
-  //     UserCredential result = await _auth.createUserWithEmailAndPassword(email: email, password: password);
-      
-  //     if (result.user != null) {
-  //       AdminModel newAdmin = AdminModel(
-  //         adminId: result.user!.uid,
-  //         adminName: name,
-  //         email: email,
-  //         role: 'admin',
-  //         registrationDate: DateTime.now(),
-  //       );
-        
-  //       await _firestore.collection('admins').doc(result.user!.uid).set(newAdmin.toJson());
-  //     }
-  //     return result;
-  //   } catch (e) {
-  //     throw Exception('Admin registration failed: $e');
-  //   }
-  // }
-
-  // Sign out
   Future<void> signOut() async {
     try {
       await _googleSignIn.signOut();
-    } catch (e) {
-      // Ignore errors signing out of Google if not logged in with it
-    }
+    } catch (e) {}
     await _auth.signOut();
   }
 
@@ -156,9 +124,8 @@ class AuthService {
       // Check if user exists in Firestore
       try {
         await getUserProfile(firebaseUser.uid);
-        return false; // Not their first time
+        return false;
       } catch (e) {
-        // User does not exist, create a new profile
         UserModel newUser = UserModel(
           userId: firebaseUser.uid,
           name: firebaseUser.displayName ?? 'Google User',
@@ -166,10 +133,10 @@ class AuthService {
           phoneNumber: firebaseUser.phoneNumber ?? '',
           registrationDate: DateTime.now(),
           isActive: true,
-          isFirstLogin: true, 
+          isFirstLogin: true,
         );
         await createUserProfile(newUser);
-        return true; // First time login!
+        return true;
       }
     } catch (e) {
       throw Exception('Google Sign-In failed: $e');

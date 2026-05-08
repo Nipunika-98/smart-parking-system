@@ -24,7 +24,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final AuthService _authService = AuthService();
   final UserService _userService = UserService();
   final VehicleService _vehicleService = VehicleService();
-  
+
   @override
   void initState() {
     super.initState();
@@ -41,87 +41,98 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _showEditPhoneDialog(String currentPhone) async {
     final TextEditingController phoneController = TextEditingController(text: currentPhone);
-    // Explicitly set cursor to the end to prevent total selection on focus
     phoneController.selection = TextSelection.fromPosition(
       TextPosition(offset: phoneController.text.length),
     );
-    
+
     final uid = _authService.currentUser?.uid;
 
     if (uid == null) return;
 
     return showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
-          'Edit Phone Number',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF2C3E50)),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Update your contact number for important session updates.',
-              style: TextStyle(color: Colors.grey, fontSize: 13),
+      builder:
+          (dialogContext) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: const Text(
+              'Edit Phone Number',
+              style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF2C3E50)),
             ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: phoneController,
-              autofocus: true,
-              keyboardType: TextInputType.phone,
-              decoration: InputDecoration(
-                labelText: 'Phone Number',
-                prefixIcon: const Icon(Icons.phone_outlined, size: 20),
-                hintText: 'Enter your phone number',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.primaryColor, width: 2),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Update your contact number for important session updates.',
+                  style: TextStyle(color: Colors.grey, fontSize: 13),
+                ),
+                const SizedBox(height: 20),
+                TextField(
+                  controller: phoneController,
+                  autofocus: true,
+                  keyboardType: TextInputType.phone,
+                  decoration: InputDecoration(
+                    labelText: 'Phone Number',
+                    prefixIcon: const Icon(Icons.phone_outlined, size: 20),
+                    hintText: 'Enter your phone number',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: AppColors.primaryColor, width: 2),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: Text(
+                  'Cancel',
+                  style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.w600),
                 ),
               ),
-            ),
-          ],
-        ),
-        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: Text('Cancel', style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.w600)),
+              ElevatedButton(
+                onPressed: () async {
+                  final newPhone = phoneController.text.trim();
+                  if (newPhone.isEmpty) {
+                    UIUtils.showSnackBar(context, 'Phone number cannot be empty', isError: true);
+                    return;
+                  }
+
+                  Navigator.pop(dialogContext);
+                  try {
+                    await _userService.updateUserProfile(uid, {'phoneNumber': newPhone});
+                    if (!context.mounted) return;
+
+                    Provider.of<UserProvider>(context, listen: false).loadUser(uid);
+
+                    UIUtils.showSnackBar(
+                      context,
+                      'Phone number updated successfully',
+                      isError: false,
+                    );
+                  } catch (e) {
+                    if (!context.mounted) return;
+                    UIUtils.showSnackBar(
+                      context,
+                      UIUtils.getFriendlyErrorMessage(e),
+                      isError: true,
+                    );
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryColor,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                ),
+                child: const Text('Save Changes', style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () async {
-              final newPhone = phoneController.text.trim();
-              if (newPhone.isEmpty) {
-                UIUtils.showSnackBar(context, 'Phone number cannot be empty', isError: true);
-                return;
-              }
-              
-              Navigator.pop(dialogContext);
-              try {
-                await _userService.updateUserProfile(uid, {'phoneNumber': newPhone});
-                if (!context.mounted) return;
-                
-                Provider.of<UserProvider>(context, listen: false).loadUser(uid);
-                
-                UIUtils.showSnackBar(context, 'Phone number updated successfully', isError: false);
-              } catch (e) {
-                if (!context.mounted) return;
-                UIUtils.showSnackBar(context, UIUtils.getFriendlyErrorMessage(e), isError: true);
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryColor,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            ),
-            child: const Text('Save Changes', style: TextStyle(fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
     );
   }
 
@@ -140,38 +151,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _deleteVehicle(String vehicleId, String plateNumber) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Vehicle'),
-        content: Text('Are you sure you want to delete vehicle $plateNumber?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Delete Vehicle'),
+            content: Text('Are you sure you want to delete vehicle $plateNumber?'),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+              TextButton(
+                onPressed: () async {
+                  Navigator.pop(context);
+                  try {
+                    await _vehicleService.deleteVehicle(vehicleId);
+                    if (!context.mounted) return;
+                    UIUtils.showSnackBar(context, 'Vehicle deleted successfully', isError: false);
+                  } catch (e) {
+                    if (!context.mounted) return;
+                    UIUtils.showSnackBar(
+                      context,
+                      UIUtils.getFriendlyErrorMessage(e),
+                      isError: true,
+                    );
+                  }
+                },
+                child: const Text('Delete', style: TextStyle(color: Colors.red)),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              try {
-                await _vehicleService.deleteVehicle(vehicleId);
-                if (!context.mounted) return;
-                UIUtils.showSnackBar(
-                  context,
-                  'Vehicle deleted successfully',
-                  isError: false,
-                );
-              } catch (e) {
-                if (!context.mounted) return;
-                UIUtils.showSnackBar(
-                  context,
-                  UIUtils.getFriendlyErrorMessage(e),
-                  isError: true,
-                );
-              }
-            },
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
     );
   }
 
@@ -182,65 +187,75 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF6F7FB),
-      body: userProvider.isLoading && user == null
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                _buildHeader(user),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
+      body:
+          userProvider.isLoading && user == null
+              ? const Center(child: CircularProgressIndicator())
+              : Column(
                 children: [
-                  _buildSectionTitle('Personal Information'),
-                  _buildPersonalInfoCard(user),
-                  const SizedBox(height: 24),
+                  _buildHeader(user),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        children: [
+                          _buildSectionTitle('Personal Information'),
+                          _buildPersonalInfoCard(user),
+                          const SizedBox(height: 24),
 
-                  _buildSectionHeader('My Vehicles', '+ Add', () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const AddVehicleScreen()),
-                    );
-                  }),
-
-                  Consumer<VehicleProvider>(
-                    builder: (context, vehicleProvider, child) {
-                      if (vehicleProvider.isLoading) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-                      if (vehicleProvider.vehicles.isEmpty) {
-                        return const Text('No vehicles added yet.');
-                      }
-                      return Column(
-                        children: vehicleProvider.vehicles.map((v) => Column(
-                          children: [
-                            _buildVehicleCard(
+                          _buildSectionHeader('My Vehicles', '+ Add', () {
+                            Navigator.push(
                               context,
-                              v.vehicleId,
-                              v.vehiclePlateNo,
-                              v.vehicleType,
-                              isPrimary: v.isPrimary,
-                              icon: _getVehicleIcon(v.vehicleType),
-                              onDelete: () => _deleteVehicle(v.vehicleId, v.vehiclePlateNo),
-                            ),
-                            const SizedBox(height: 12),
-                          ],
-                        )).toList(),
-                      );
-                    },
+                              MaterialPageRoute(builder: (context) => const AddVehicleScreen()),
+                            );
+                          }),
+
+                          Consumer<VehicleProvider>(
+                            builder: (context, vehicleProvider, child) {
+                              if (vehicleProvider.isLoading) {
+                                return const Center(child: CircularProgressIndicator());
+                              }
+                              if (vehicleProvider.vehicles.isEmpty) {
+                                return const Text('No vehicles added yet.');
+                              }
+                              return Column(
+                                children:
+                                    vehicleProvider.vehicles
+                                        .map(
+                                          (v) => Column(
+                                            children: [
+                                              _buildVehicleCard(
+                                                context,
+                                                v.vehicleId,
+                                                v.vehiclePlateNo,
+                                                v.vehicleType,
+                                                isPrimary: v.isPrimary,
+                                                icon: _getVehicleIcon(v.vehicleType),
+                                                onDelete:
+                                                    () => _deleteVehicle(
+                                                      v.vehicleId,
+                                                      v.vehiclePlateNo,
+                                                    ),
+                                              ),
+                                              const SizedBox(height: 12),
+                                            ],
+                                          ),
+                                        )
+                                        .toList(),
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 24),
+                          _buildSectionTitle('Settings'),
+                          _buildSettingsCard(context),
+                          const SizedBox(height: 30),
+                          _buildLogoutButton(context),
+                          const SizedBox(height: 20),
+                        ],
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: 24),
-                  _buildSectionTitle('Settings'),
-                  _buildSettingsCard(context),
-                  const SizedBox(height: 30),
-                  _buildLogoutButton(context),
-                  const SizedBox(height: 20),
                 ],
               ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -278,11 +293,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               Text(
                 user?.name ?? 'Loading...',
-                style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 4),
-              Text(user?.userId != null ? 'ID: ${user!.userId.substring(0, 8)}...' : '', 
-                   style: const TextStyle(color: Colors.white70, fontSize: 14)),
+              Text(
+                user?.userId != null ? 'ID: ${user!.userId.substring(0, 8)}...' : '',
+                style: const TextStyle(color: Colors.white70, fontSize: 14),
+              ),
             ],
           ),
         ],
@@ -338,13 +359,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
             _buildInfoRow(Icons.email, 'Email', user?.email ?? 'Loading...'),
             const Padding(padding: EdgeInsets.symmetric(vertical: 16), child: Divider(height: 1)),
             _buildInfoRow(
-              Icons.phone, 
-              'Phone', 
+              Icons.phone,
+              'Phone',
               user?.phoneNumber ?? 'Loading...',
-              trailing: user != null ? IconButton(
-                icon: const Icon(Icons.edit, size: 18, color: AppColors.primaryColor),
-                onPressed: () => _showEditPhoneDialog(user.phoneNumber),
-              ) : null,
+              trailing:
+                  user != null
+                      ? IconButton(
+                        icon: const Icon(Icons.edit, size: 18, color: AppColors.primaryColor),
+                        onPressed: () => _showEditPhoneDialog(user.phoneNumber),
+                      )
+                      : null,
             ),
           ],
         ),

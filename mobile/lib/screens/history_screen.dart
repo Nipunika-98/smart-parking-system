@@ -37,43 +37,42 @@ class _HistoryScreenState extends State<HistoryScreen> {
           builder: (context, pricingProvider, parkingProvider, _) {
             final rates = pricingProvider.rates;
             final slots = parkingProvider.slots;
-
-            // Map slotId -> slotNumber
             final slotMap = {for (var s in slots) s.slotId: s.slotNumber};
+            return StreamBuilder<List<ParkingSessionModel>>(
+              stream: _parkingService.getUserSessionHistory(userId),
+              builder: (context, sessionSnapshot) {
+                if (sessionSnapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (sessionSnapshot.hasError) {
+                  return Center(child: Text('Error: ${sessionSnapshot.error}'));
+                }
 
-                return StreamBuilder<List<ParkingSessionModel>>(
-                  stream: _parkingService.getUserSessionHistory(userId),
-                  builder: (context, sessionSnapshot) {
-                    if (sessionSnapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
-                    if (sessionSnapshot.hasError) {
-                      return Center(child: Text('Error: ${sessionSnapshot.error}'));
-                    }
+                final allSessions = sessionSnapshot.data ?? [];
+                final filtered = _applyFilter(allSessions);
 
-                    final allSessions = sessionSnapshot.data ?? [];
-                    final filtered = _applyFilter(allSessions);
-
-                    return Column(
-                      children: [
-                        _buildHeader(allSessions, rates, slotMap),
-                        const SizedBox(height: 16),
-                        _buildFilters(),
-                        const SizedBox(height: 12),
-                        Expanded(
-                          child: filtered.isEmpty
+                return Column(
+                  children: [
+                    _buildHeader(allSessions, rates, slotMap),
+                    const SizedBox(height: 16),
+                    _buildFilters(),
+                    const SizedBox(height: 12),
+                    Expanded(
+                      child:
+                          filtered.isEmpty
                               ? _buildEmptyState()
                               : ListView.builder(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                                  itemCount: filtered.length,
-                                  itemBuilder: (context, index) =>
-                                      _buildHistoryCard(filtered[index], rates, slotMap),
-                                ),
-                        ),
-                      ],
-                    );
-                  },
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                itemCount: filtered.length,
+                                itemBuilder:
+                                    (context, index) =>
+                                        _buildHistoryCard(filtered[index], rates, slotMap),
+                              ),
+                    ),
+                  ],
                 );
+              },
+            );
           },
         ),
       ),
@@ -107,7 +106,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
           const SizedBox(height: 20),
           Row(
             children: [
-              _statBox('Total Spent', 'LKR ${totalSpent.toStringAsFixed(0)}', Icons.payments_outlined),
+              _statBox(
+                'Total Spent',
+                'LKR ${totalSpent.toStringAsFixed(0)}',
+                Icons.payments_outlined,
+              ),
               const SizedBox(width: 16),
               _statBox('Sessions', sessions.length.toString(), Icons.local_parking),
             ],
@@ -134,7 +137,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(label, style: const TextStyle(color: Colors.white60, fontSize: 10)),
-                Text(value, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
               ],
             ),
           ],
@@ -162,9 +172,15 @@ class _HistoryScreenState extends State<HistoryScreen> {
         selected: isSelected,
         onSelected: (val) => setState(() => _selectedFilter = label),
         selectedColor: AppColors.primaryColor,
-        labelStyle: TextStyle(color: isSelected ? Colors.white : Colors.black87, fontWeight: FontWeight.w600),
+        labelStyle: TextStyle(
+          color: isSelected ? Colors.white : Colors.black87,
+          fontWeight: FontWeight.w600,
+        ),
         backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide.none),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide.none,
+        ),
       ),
     );
   }
@@ -174,9 +190,15 @@ class _HistoryScreenState extends State<HistoryScreen> {
     switch (_selectedFilter) {
       case 'This Week':
         final weekStart = now.subtract(Duration(days: now.weekday - 1));
-        return sessions.where((s) => s.entryTime.isAfter(DateTime(weekStart.year, weekStart.month, weekStart.day))).toList();
+        return sessions
+            .where(
+              (s) => s.entryTime.isAfter(DateTime(weekStart.year, weekStart.month, weekStart.day)),
+            )
+            .toList();
       case 'This Month':
-        return sessions.where((s) => s.entryTime.year == now.year && s.entryTime.month == now.month).toList();
+        return sessions
+            .where((s) => s.entryTime.year == now.year && s.entryTime.month == now.month)
+            .toList();
       case 'This Year':
         return sessions.where((s) => s.entryTime.year == now.year).toList();
       default:
@@ -195,13 +217,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
     final exitTime = session.exitTime ?? DateTime.now();
     final duration = exitTime.difference(session.entryTime);
-    final hours = (duration.inMinutes / 60.0).ceil(); // Bill for each chunk
-
+    final hours = (duration.inMinutes / 60.0).ceil();
     final slotNumber = slotMap[session.slotId] ?? '';
     final vehicleType = ParkingSlotModel.getVehicleType(slotNumber);
     final rate = rates[vehicleType];
 
-    if (rate == null) return hours * 100.0; // Fallback to mock
+    if (rate == null) return hours * 100.0;
 
     if (hours <= 0) return 0;
 
@@ -219,7 +240,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
     return total;
   }
 
-  Widget _buildHistoryCard(ParkingSessionModel session, Map<String, PricingRateModel?> rates, Map<String, String> slotMap) {
+  Widget _buildHistoryCard(
+    ParkingSessionModel session,
+    Map<String, PricingRateModel?> rates,
+    Map<String, String> slotMap,
+  ) {
     final exitTime = session.exitTime ?? DateTime.now();
     final duration = _formatDuration(session.entryTime, exitTime);
     final amount = _calculateAmount(session, rates, slotMap);
@@ -231,7 +256,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         children: [
@@ -244,8 +275,18 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   children: [
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(color: AppColors.teal.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
-                      child: Text(slotNumber, style: const TextStyle(color: AppColors.teal, fontWeight: FontWeight.bold, fontSize: 13)),
+                      decoration: BoxDecoration(
+                        color: AppColors.teal.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        slotNumber,
+                        style: const TextStyle(
+                          color: AppColors.teal,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
                     ),
                     _buildStatusBadge(session.paymentStatus),
                   ],
@@ -260,7 +301,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Text('LKR ${amount.toStringAsFixed(0)}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryColor)),
+                        Text(
+                          'LKR ${amount.toStringAsFixed(0)}',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primaryColor,
+                          ),
+                        ),
                         Text(duration, style: const TextStyle(fontSize: 11, color: Colors.grey)),
                       ],
                     ),
@@ -271,17 +319,28 @@ class _HistoryScreenState extends State<HistoryScreen> {
           ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20))),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade50,
+              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
+            ),
             child: Row(
               children: [
                 Icon(_getVehicleIcon(vehicleType), size: 14, color: Colors.grey),
                 const SizedBox(width: 6),
                 Text(
                   vehicleType.toUpperCase(),
-                  style: const TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                  style: const TextStyle(
+                    fontSize: 10,
+                    color: Colors.grey,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                  ),
                 ),
                 const Spacer(),
-                Text('ID: ${session.ticketNumber.split('-').last}', style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                Text(
+                  'ID: ${session.ticketNumber.split('-').last}',
+                  style: const TextStyle(fontSize: 10, color: Colors.grey),
+                ),
               ],
             ),
           ),
@@ -323,11 +382,19 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final color = isPaid ? const Color(0xFF10B981) : const Color(0xFFF59E0B);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8), border: Border.all(color: color.withValues(alpha: 0.2))),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(width: 5, height: 5, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+          Container(
+            width: 5,
+            height: 5,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
           const SizedBox(width: 5),
           Text(status, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold)),
         ],
@@ -337,9 +404,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   IconData _getVehicleIcon(String type) {
     switch (type) {
-      case 'bike': return Icons.pedal_bike;
-      case 'threeWheeler': return Icons.electric_rickshaw;
-      default: return Icons.directions_car;
+      case 'bike':
+        return Icons.pedal_bike;
+      case 'threeWheeler':
+        return Icons.electric_rickshaw;
+      default:
+        return Icons.directions_car;
     }
   }
 
@@ -357,10 +427,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
         children: [
           Icon(Icons.history_rounded, size: 64, color: Colors.grey.shade300),
           const SizedBox(height: 16),
-          const Text('No sessions recorded', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.grey)),
+          const Text(
+            'No sessions recorded',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.grey),
+          ),
         ],
       ),
     );
   }
 }
-

@@ -7,11 +7,10 @@ class VehicleService {
   // Add a new vehicle
   Future<void> addVehicle(VehicleModel vehicle) async {
     try {
-      // If it's the primary vehicle, we might want to unset other primary vehicles
       if (vehicle.isPrimary) {
         await _clearPrimaryStatus(vehicle.userId);
       }
-      
+
       await _firestore.collection('vehicles').add(vehicle.toJson());
     } catch (e) {
       throw Exception('Failed to add vehicle: $e');
@@ -30,7 +29,7 @@ class VehicleService {
     }
   }
 
-  // Delete vehicle (soft delete)
+  // Delete vehicle
   Future<void> deleteVehicle(String vehicleId) async {
     try {
       await _firestore.collection('vehicles').doc(vehicleId).update({'isActive': false});
@@ -46,19 +45,20 @@ class VehicleService {
         .where('userId', isEqualTo: userId)
         .where('isActive', isEqualTo: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => VehicleModel.fromJson(doc.data(), doc.id))
-            .toList());
+        .map(
+          (snapshot) =>
+              snapshot.docs.map((doc) => VehicleModel.fromJson(doc.data(), doc.id)).toList(),
+        );
   }
 
-  // Helper method to clear primary status of other vehicles
+  // Clear primary status of other vehicles
   Future<void> _clearPrimaryStatus(String userId) async {
-    QuerySnapshot vehicles = await _firestore
-        .collection('vehicles')
-        .where('userId', isEqualTo: userId)
-        .where('isPrimary', isEqualTo: true)
-        .get();
-
+    QuerySnapshot vehicles =
+        await _firestore
+            .collection('vehicles')
+            .where('userId', isEqualTo: userId)
+            .where('isPrimary', isEqualTo: true)
+            .get();
     for (var doc in vehicles.docs) {
       await _firestore.collection('vehicles').doc(doc.id).update({'isPrimary': false});
     }

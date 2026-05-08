@@ -14,12 +14,9 @@ class UserProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  /// Called by [ChangeNotifierProxyProvider] whenever [AuthProvider] changes.
   void updateUserId(String? userId) {
-    if (_currentUserId == userId) return; // no change
+    if (_currentUserId == userId) return; 
     _currentUserId = userId;
-
-    // Always clear stale data immediately when the user changes.
     _user = null;
     _error = null;
 
@@ -28,8 +25,6 @@ class UserProvider extends ChangeNotifier {
       notifyListeners();
       return;
     }
-
-    // Load fresh profile for the newly logged-in user.
     loadUser(userId);
   }
 

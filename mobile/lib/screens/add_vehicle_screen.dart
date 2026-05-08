@@ -68,9 +68,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
     if (node.hasFocus && controller.text.isNotEmpty) {
       Future.delayed(const Duration(milliseconds: 100), () {
         if (!controller.selection.isCollapsed) {
-          controller.selection = TextSelection.collapsed(
-            offset: controller.selection.extentOffset,
-          );
+          controller.selection = TextSelection.collapsed(offset: controller.selection.extentOffset);
         }
       });
     }
@@ -122,7 +120,6 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
         if (user == null) throw Exception('No user logged in');
 
         if (widget.vehicleId != null) {
-          // Update existing
           await _vehicleService.updateVehicle(widget.vehicleId!, {
             'vehiclePlateNo': plateController.text.trim(),
             'vehicleType': selectedVehicleType,
@@ -231,8 +228,6 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                 ),
 
                 const SizedBox(height: 20),
-
-                // Plate Number
                 _buildLabel('Plate Number'),
                 TextFormField(
                   key: const ValueKey('plateNumberField'),

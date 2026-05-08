@@ -4,7 +4,6 @@ import '../models/user_model.dart';
 class UserService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // Get user profile
   Future<UserModel?> getUserProfile(String userId) async {
     try {
       DocumentSnapshot doc = await _firestore.collection('users').doc(userId).get();
@@ -17,7 +16,6 @@ class UserService {
     }
   }
 
-  // Update user profile
   Future<void> updateUserProfile(String userId, Map<String, dynamic> data) async {
     try {
       await _firestore.collection('users').doc(userId).update(data);
@@ -26,7 +24,6 @@ class UserService {
     }
   }
 
-  // Deactivate user (Soft delete)
   Future<void> deactivateUser(String userId) async {
     try {
       await _firestore.collection('users').doc(userId).update({'isActive': false});

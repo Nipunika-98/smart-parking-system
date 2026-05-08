@@ -41,7 +41,6 @@ class UIUtils {
   // Common SnackBar style
   static void showSnackBar(BuildContext context, String message, {bool isError = true}) {
     if (!context.mounted) return;
-
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(

@@ -28,7 +28,6 @@ class ParkingService {
   }
 
   // Stream of slots for a level derived from section letters in slotNumber
-  // Matches the dashboard logic: A/B → Level 1, C/D → Level 2, E/F → Level 3
   Stream<List<ParkingSlotModel>> getSlotsByLevelSections(int levelNumber) {
     final sections = {
       1: ['A', 'B'],
@@ -88,11 +87,10 @@ class ParkingService {
   // Create a Parking Session (User scans Entry QR)
   Future<ParkingSessionModel> createSession(String userId, String slotId, String entryScannedBy) async {
     try {
-      // Create random ticket number
       final ticketNumber = 'TICKET-${DateTime.now().millisecondsSinceEpoch}-${Random().nextInt(1000)}';
       
       ParkingSessionModel newSession = ParkingSessionModel(
-        sessionId: '', // Will be updated by Firestore
+        sessionId: '', 
         userId: userId,
         slotId: slotId,
         ticketNumber: ticketNumber,
@@ -113,7 +111,6 @@ class ParkingService {
   // End Parking Session (User scans Exit QR and pays)
   Future<void> endSession(String sessionId, String exitScannedBy, String paymentStatus, {double? totalAmount}) async {
     try {
-      // Get the session to find the slotId
       DocumentSnapshot sessionDoc = await _firestore.collection('parking_sessions').doc(sessionId).get();
       if (!sessionDoc.exists) throw Exception('Session not found');
 
@@ -156,10 +153,9 @@ class ParkingService {
         .map((snapshot) {
       final sessions = snapshot.docs
           .map((doc) => ParkingSessionModel.fromJson(doc.data(), doc.id))
-          .where((s) => s.exitTime != null) // Only completed sessions
+          .where((s) => s.exitTime != null) 
           .toList();
 
-      // Sort by entryTime descending
       sessions.sort((a, b) => b.entryTime.compareTo(a.entryTime));
       return sessions;
     });

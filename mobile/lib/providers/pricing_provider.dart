@@ -14,9 +14,8 @@ class PricingProvider extends ChangeNotifier {
   Map<String, PricingRateModel?> get rates => _rates;
   bool get isLoading => _isLoading;
 
-  /// Called by [ChangeNotifierProxyProvider] whenever [AuthProvider] changes.
   void updateAuth(bool isAuthenticated) {
-    if (_isAuthenticated == isAuthenticated) return; // no change
+    if (_isAuthenticated == isAuthenticated) return; 
     _isAuthenticated = isAuthenticated;
 
     _ratesSubscription?.cancel();
@@ -29,7 +28,6 @@ class PricingProvider extends ChangeNotifier {
       return;
     }
 
-    // User just signed in — start the Firestore subscription.
     _isLoading = true;
     notifyListeners();
 

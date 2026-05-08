@@ -69,10 +69,7 @@ class _ActiveParkingSessionScreenState extends State<ActiveParkingSessionScreen>
                       ],
                     );
                   }
-
                   final session = provider.activeSessions.first;
-
-                  // Start/sync timer if entry time changed
                   if (_entryTime == null || _entryTime != session.entryTime) {
                     WidgetsBinding.instance.addPostFrameCallback((_) {
                       _startTimer(session.entryTime);
@@ -323,8 +320,6 @@ class _ActiveParkingSessionScreenState extends State<ActiveParkingSessionScreen>
         ),
         child: ElevatedButton.icon(
           onPressed: () {
-            // Simply navigate to the scan tab/page
-            // In our BottomNavigation setting, we can just switch tabs or push the scanner
             Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const QrScanScreen()),

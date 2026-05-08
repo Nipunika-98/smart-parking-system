@@ -1,8 +1,6 @@
-
 import 'package:flutter/material.dart';
 import 'package:mobile/constants/app_colors.dart';
 import 'package:mobile/screens/level_detail.dart';
-import 'package:mobile/screens/qr_scan_screen.dart';
 import 'package:mobile/services/auth_service.dart';
 import 'package:mobile/services/user_service.dart';
 import 'package:mobile/services/notification_service.dart';
@@ -38,8 +36,6 @@ class _HomeScreenState extends State<HomeScreen> {
     if (uid == null) return;
     try {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
-
-      // Wait briefly for UserProvider to finish loading (it auto-loads via ProxyProvider)
       if (userProvider.isLoading) {
         await Future.doWhile(() async {
           await Future.delayed(const Duration(milliseconds: 100));
@@ -57,16 +53,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _handleFirstLogin(String uid) async {
     try {
-      // 1. Send Welcome Notification
       await _notificationService.sendWelcomeNotification(uid);
-      
-      // 2. Update user profile to mark first login as complete
       await _userService.updateUserProfile(uid, {'isFirstLogin': false});
-      
-      // 3. Show a welcome SnackBar
       if (mounted) {
         UIUtils.showSnackBar(
-          context, 
+          context,
           'Welcome to SmartPark! 🚗 We are glad to have you here.',
           isError: false,
         );
@@ -85,9 +76,6 @@ class _HomeScreenState extends State<HomeScreen> {
           builder: (context, parkingProvider, _) {
             final slots = parkingProvider.slots;
             final isLive = !parkingProvider.isLoadingSlots;
-
-            // Group by section letter — matches dashboard logic exactly:
-            // A/B → Level 1, C/D → Level 2, E/F → Level 3
             final Map<int, List<ParkingSlotModel>> byLevel = {1: [], 2: [], 3: []};
             for (final s in slots) {
               final section = s.slotNumber.split('-').first.toUpperCase();
@@ -99,20 +87,18 @@ class _HomeScreenState extends State<HomeScreen> {
                 byLevel[3]!.add(s);
               }
             }
+            final levels =
+                [1, 2, 3].map((l) {
+                  final levelSlots = byLevel[l]!;
+                  final available = levelSlots.where((s) => s.status == 'AVAILABLE').length;
+                  return {
+                    'level': 'Level $l',
+                    'available': available,
+                    'total': levelSlots.isEmpty ? 0 : levelSlots.length,
+                  };
+                }).toList();
 
-            final levels = [1, 2, 3].map((l) {
-              final levelSlots = byLevel[l]!;
-              final available =
-                  levelSlots.where((s) => s.status == 'AVAILABLE').length;
-              return {
-                'level': 'Level $l',
-                'available': available,
-                'total': levelSlots.isEmpty ? 0 : levelSlots.length,
-              };
-            }).toList();
-
-            final totalAvailable = levels.fold<int>(
-                0, (sum, l) => sum + (l['available'] as int));
+            final totalAvailable = levels.fold<int>(0, (sum, l) => sum + (l['available'] as int));
 
             return SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 160),
@@ -146,7 +132,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final userProvider = Provider.of<UserProvider>(context);
     final userProfile = userProvider.user;
 
-    final displayName = userProfile?.name ?? 
+    final displayName =
+        userProfile?.name ??
         (_authService.currentUser?.uid != null
             ? 'USR-${_authService.currentUser!.uid.substring(0, 8)}'
             : 'Loading...');
@@ -206,10 +193,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             child: Column(
               children: [
-                const Text(
-                  'Available Parking Slots',
-                  style: TextStyle(color: Colors.white70),
-                ),
+                const Text('Available Parking Slots', style: TextStyle(color: Colors.white70)),
                 const SizedBox(height: 12),
                 Text(
                   totalAvailable,
@@ -227,19 +211,21 @@ class _HomeScreenState extends State<HomeScreen> {
                       width: 8,
                       height: 8,
                       decoration: BoxDecoration(
-                        color: isLive
-                            ? const Color(0xFF4ADE80) // green when live
-                            : Colors.white38,
+                        color:
+                            isLive
+                                ? const Color(0xFF4ADE80) 
+                                : Colors.white38,
                         shape: BoxShape.circle,
-                        boxShadow: isLive
-                            ? [
-                                BoxShadow(
-                                  color: const Color(0xFF4ADE80).withValues(alpha: 0.6),
-                                  blurRadius: 6,
-                                  spreadRadius: 2,
-                                )
-                              ]
-                            : null,
+                        boxShadow:
+                            isLive
+                                ? [
+                                  BoxShadow(
+                                    color: const Color(0xFF4ADE80).withValues(alpha: 0.6),
+                                    blurRadius: 6,
+                                    spreadRadius: 2,
+                                  ),
+                                ]
+                                : null,
                       ),
                     ),
                     const SizedBox(width: 6),
@@ -258,7 +244,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-
     );
   }
 
@@ -266,7 +251,6 @@ class _HomeScreenState extends State<HomeScreen> {
     final int total = level['total'] as int;
     final int available = level['available'] as int;
     final int occupied = total - available;
-    // progress = how full (occupied / total), so bar fills as spaces get taken
     final double progress = total > 0 ? occupied / total : 0;
 
     // Color based on availability
@@ -297,9 +281,7 @@ class _HomeScreenState extends State<HomeScreen> {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (_) => LevelDetailScreen(levelName: level['level']),
-          ),
+          MaterialPageRoute(builder: (_) => LevelDetailScreen(levelName: level['level'])),
         );
       },
       child: Container(
@@ -336,33 +318,24 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       Text(
                         level['level'],
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w600, fontSize: 15),
+                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
                       ),
                       Text(
-                        total == 0
-                            ? 'No data yet'
-                            : '$occupied of $total slots occupied',
-                        style: TextStyle(
-                            fontSize: 12, color: Colors.grey.shade500),
+                        total == 0 ? 'No data yet' : '$occupied of $total slots occupied',
+                        style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
                       ),
                     ],
                   ),
                 ),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: availColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
                     total == 0 ? '—' : '$available free',
-                    style: TextStyle(
-                      color: availColor,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
-                    ),
+                    style: TextStyle(color: availColor, fontWeight: FontWeight.bold, fontSize: 13),
                   ),
                 ),
               ],

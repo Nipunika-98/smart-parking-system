@@ -37,16 +37,13 @@ class _QrScanScreenState extends State<QrScanScreen> {
         builder: (context, parkingProvider, _) {
           final bool hasActiveSession = parkingProvider.activeSessions.isNotEmpty;
           final activeSession = hasActiveSession ? parkingProvider.activeSessions.first : null;
-
           return StreamBuilder<Map<String, String>>(
             stream: _parkingService.watchGateTokens(),
             builder: (context, tokenSnapshot) {
               final tokens = tokenSnapshot.data ?? {'entry': '', 'exit': ''};
-
               return SafeArea(
                 child: Stack(
                   children: [
-                    // Background gradient
                     Container(
                       decoration: const BoxDecoration(
                         gradient: LinearGradient(
@@ -56,8 +53,6 @@ class _QrScanScreenState extends State<QrScanScreen> {
                         ),
                       ),
                     ),
-
-                    // Top Bar
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       child: Row(
@@ -74,8 +69,7 @@ class _QrScanScreenState extends State<QrScanScreen> {
                         ],
                       ),
                     ),
-
-                    // Instruction Text & Camera Frame
+                    // Text & Camera Frame
                     Center(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
@@ -102,8 +96,7 @@ class _QrScanScreenState extends State<QrScanScreen> {
                         ],
                       ),
                     ),
-
-                    // Action Button (Simulate SCAN)
+                    // Simulate SCAN
                     Positioned(
                       bottom: 40,
                       left: 40,

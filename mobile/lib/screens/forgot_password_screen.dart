@@ -16,8 +16,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final _authService = AuthService();
   final _emailFocus = FocusNode();
   bool _isLoading = false;
-  
-  // Timer variables
+
   Timer? _timer;
   int _countdownSeconds = 0;
   bool _isCooldownActive = false;
@@ -80,26 +79,32 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     try {
       await _authService.sendPasswordResetEmail(email);
       if (!mounted) return;
-      
+
       _startCooldown();
-      
+
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (context) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text('Reset Link Sent', style: TextStyle(fontWeight: FontWeight.bold)),
-          content: Text('A password reset link has been sent to $email. Please check your inbox.'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context); // Close dialog
-                Navigator.pop(context); // Go back to login
-              },
-              child: const Text('Back to Login', style: TextStyle(color: AppColors.primaryColor, fontWeight: FontWeight.bold)),
+        builder:
+            (context) => AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: const Text('Reset Link Sent', style: TextStyle(fontWeight: FontWeight.bold)),
+              content: Text(
+                'A password reset link has been sent to $email. Please check your inbox.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    Navigator.pop(context);
+                  },
+                  child: const Text(
+                    'Back to Login',
+                    style: TextStyle(color: AppColors.primaryColor, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
       );
     } catch (e) {
       if (!mounted) return;
@@ -138,11 +143,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             const SizedBox(height: 12),
             const Text(
               'Enter the email address associated with your account and we\'ll send you a link to reset your password.',
-              style: TextStyle(
-                color: Color(0xFF6E6D74),
-                fontSize: 15,
-                height: 1.5,
-              ),
+              style: TextStyle(color: Color(0xFF6E6D74), fontSize: 15, height: 1.5),
             ),
             const SizedBox(height: 40),
             const Text(
@@ -190,18 +191,21 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 elevation: 0,
               ),
-              child: _isLoading
-                  ? const SizedBox(
-                      height: 24,
-                      width: 24,
-                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                    )
-                  : Text(
-                      _isCooldownActive 
-                          ? 'Resend Link in $_countdownSeconds'
-                          : 'Send Reset Link',
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
-                    ),
+              child:
+                  _isLoading
+                      ? const SizedBox(
+                        height: 24,
+                        width: 24,
+                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                      )
+                      : Text(
+                        _isCooldownActive ? 'Resend Link in $_countdownSeconds' : 'Send Reset Link',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
             ),
             if (_isCooldownActive)
               Padding(
@@ -210,10 +214,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   child: Text(
                     'Didn\'t receive the email? Wait for the timer to resend.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.grey.shade600,
-                      fontSize: 13,
-                    ),
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
                   ),
                 ),
               ),

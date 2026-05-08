@@ -19,7 +19,6 @@ class ParkingProvider extends ChangeNotifier {
   List<ParkingSessionModel> get activeSessions => _activeSessions;
   bool get isLoadingSlots => _isLoadingSlots;
 
-  /// Called by [ChangeNotifierProxyProvider] whenever [AuthProvider] changes.
   void updateUserId(String? userId) {
     final isAuthenticated = userId != null;
 

@@ -20,10 +20,7 @@ class ViewRatesScreen extends StatelessWidget {
 
             return Column(
               children: [
-                // ── Header ──
                 _buildHeader(context, isConnected),
-
-                // ── Body ──
                 Expanded(
                   child:
                       isLoading
@@ -31,10 +28,8 @@ class ViewRatesScreen extends StatelessWidget {
                           : ListView(
                             padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
                             children: [
-                              // Info banner
                               _infoBanner(isConnected),
                               const SizedBox(height: 16),
-
                               // Vehicle rate cards
                               _VehicleRateCard(
                                 vehicleType: 'car',
@@ -60,8 +55,6 @@ class ViewRatesScreen extends StatelessWidget {
                                 rate: rates['threeWheeler'],
                               ),
                               const SizedBox(height: 20),
-
-                              // Note card
                               _noteCard(),
                             ],
                           ),
@@ -74,7 +67,6 @@ class ViewRatesScreen extends StatelessWidget {
     );
   }
 
-  // ── HEADER ────────────────────────────────────────────────────────────────
   Widget _buildHeader(BuildContext context, bool isConnected) {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
@@ -148,7 +140,7 @@ class ViewRatesScreen extends StatelessWidget {
     );
   }
 
-  // ── INFO BANNER ───────────────────────────────────────────────────────────
+  // INFO BANNER
   Widget _infoBanner(bool isConnected) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -172,7 +164,7 @@ class ViewRatesScreen extends StatelessWidget {
     );
   }
 
-  // ── NOTE CARD ─────────────────────────────────────────────────────────────
+  // NOTE CARD
   Widget _noteCard() {
     return Container(
       padding: const EdgeInsets.all(14),
@@ -198,8 +190,7 @@ class ViewRatesScreen extends StatelessWidget {
   }
 }
 
-// ── Per-vehicle rate card ────────────────────────────────────────────────────
-
+// Per-vehicle rate card
 class _VehicleRateCard extends StatelessWidget {
   final String vehicleType;
   final String label;

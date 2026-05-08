@@ -27,7 +27,6 @@ class NotificationService {
   // Mark notification as read
   Future<void> markAsRead(String notificationId) async {
     try {
-      // Update both 'read' (dashboard) and 'isUnread' (legacy) for full compatibility
       await _firestore.collection('notifications').doc(notificationId).update({
         'read': true,
         'isUnread': false,

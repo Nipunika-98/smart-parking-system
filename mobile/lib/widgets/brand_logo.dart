@@ -13,7 +13,7 @@ class BrandLogo extends StatelessWidget {
       height: size,
       child: ClipOval(
         child: Transform.scale(
-          scale: 1.8, // Zoom in to explicitly crop out the white square border baked into the image
+          scale: 1.8, 
           child: Image.asset(
             'assets/images/logo.png',
             width: size,

@@ -76,7 +76,6 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       } catch (e) {
         if (mounted) {
           String errorMessage = UIUtils.getFriendlyErrorMessage(e);
-          // Customize message for incorrect current password
           if (errorMessage.toLowerCase().contains('password') || 
               errorMessage.toLowerCase().contains('credential')) {
             errorMessage = 'Please enter correct password';

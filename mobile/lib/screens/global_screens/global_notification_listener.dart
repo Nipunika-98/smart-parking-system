@@ -42,8 +42,6 @@ class _GlobalNotificationListenerState extends State<GlobalNotificationListener>
             .getLatestNotificationStream(user.uid)
             .listen((notification) {
           if (notification != null) {
-            // Only show if it's a NEW notification arrived AFTER app started
-            // and we haven't shown it in this session already
             if (notification.timestamp.isAfter(_appStartTime!) && 
                 notification.notificationId != _lastShownId) {
               _lastShownId = notification.notificationId;
@@ -72,7 +70,6 @@ class _GlobalNotificationListenerState extends State<GlobalNotificationListener>
             onTap: () {
               _overlayEntry?.remove();
               _overlayEntry = null;
-              // Navigate to notifications screen using the global key
               widget.navigatorKey.currentState?.pushNamed('/notifications');
             },
             onDismiss: () {

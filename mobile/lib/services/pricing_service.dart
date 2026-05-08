@@ -6,35 +6,27 @@ class PricingService {
 
   static const _collection = 'pricing_rates';
 
-  // ── Real-time stream of the latest rate for one vehicle type ──────────────
-  // Mirrors dashboard getLatestRate(): filters by vehicleType, sorts by
-  // effectiveDate desc, takes the first doc.
   Stream<PricingRateModel?> watchLatestRate(String vehicleType) {
     return _firestore
         .collection(_collection)
         .where('vehicleType', isEqualTo: vehicleType)
         .snapshots()
         .map((snapshot) {
-      if (snapshot.docs.isEmpty) return null;
-      // Sort manually (avoids composite index) — newest first
-      final docs = snapshot.docs
-          .map((d) => PricingRateModel.fromJson(d.data(), d.id))
-          .toList()
-        ..sort((a, b) {
-          final ta = a.effectiveDate?.millisecondsSinceEpoch ?? 0;
-          final tb = b.effectiveDate?.millisecondsSinceEpoch ?? 0;
-          return tb.compareTo(ta);
+          if (snapshot.docs.isEmpty) return null;
+          final docs =
+              snapshot.docs.map((d) => PricingRateModel.fromJson(d.data(), d.id)).toList()
+                ..sort((a, b) {
+                  final ta = a.effectiveDate?.millisecondsSinceEpoch ?? 0;
+                  final tb = b.effectiveDate?.millisecondsSinceEpoch ?? 0;
+                  return tb.compareTo(ta);
+                });
+          return docs.first;
         });
-      return docs.first;
-    });
   }
 
-  // ── Real-time stream of ALL three vehicle-type rates at once ──────────────
+  // Real-time stream of ALL three vehicle-type rates at once 
   Stream<Map<String, PricingRateModel?>> watchAllRates() {
-    return _firestore
-        .collection(_collection)
-        .snapshots()
-        .map((snapshot) {
+    return _firestore.collection(_collection).snapshots().map((snapshot) {
       final Map<String, List<PricingRateModel>> byType = {
         'car': [],
         'bike': [],
@@ -46,29 +38,23 @@ class PricingService {
           byType[model.vehicleType]!.add(model);
         }
       }
-      // For each type: sort newest first and pick the latest
       final Map<String, PricingRateModel?> result = {};
       for (final entry in byType.entries) {
-        final sorted = entry.value
-          ..sort((a, b) {
-            final ta = a.effectiveDate?.millisecondsSinceEpoch ?? 0;
-            final tb = b.effectiveDate?.millisecondsSinceEpoch ?? 0;
-            return tb.compareTo(ta);
-          });
+        final sorted =
+            entry.value..sort((a, b) {
+              final ta = a.effectiveDate?.millisecondsSinceEpoch ?? 0;
+              final tb = b.effectiveDate?.millisecondsSinceEpoch ?? 0;
+              return tb.compareTo(ta);
+            });
         result[entry.key] = sorted.isEmpty ? null : sorted.first;
       }
       return result;
     });
   }
 
-  // ── One-shot fetch (all types) ────────────────────────────
   Future<List<PricingRateModel>> getAllRates() async {
     final snapshot = await _firestore.collection(_collection).get();
-    final Map<String, List<PricingRateModel>> byType = {
-      'car': [],
-      'bike': [],
-      'threeWheeler': [],
-    };
+    final Map<String, List<PricingRateModel>> byType = {'car': [], 'bike': [], 'threeWheeler': []};
     for (final doc in snapshot.docs) {
       final model = PricingRateModel.fromJson(doc.data(), doc.id);
       if (byType.containsKey(model.vehicleType)) {
@@ -89,22 +75,18 @@ class PricingService {
     return result;
   }
 
-  // ── One-shot fetch (kept for backwards compat) ────────────────────────────
   Future<PricingRateModel?> getCurrentPricingRate() async {
     try {
-      final snapshot = await _firestore
-          .collection(_collection)
-          .where('vehicleType', isEqualTo: 'car')
-          .get();
+      final snapshot =
+          await _firestore.collection(_collection).where('vehicleType', isEqualTo: 'car').get();
       if (snapshot.docs.isEmpty) return null;
-      final docs = snapshot.docs
-          .map((d) => PricingRateModel.fromJson(d.data(), d.id))
-          .toList()
-        ..sort((a, b) {
-          final ta = a.effectiveDate?.millisecondsSinceEpoch ?? 0;
-          final tb = b.effectiveDate?.millisecondsSinceEpoch ?? 0;
-          return tb.compareTo(ta);
-        });
+      final docs =
+          snapshot.docs.map((d) => PricingRateModel.fromJson(d.data(), d.id)).toList()
+            ..sort((a, b) {
+              final ta = a.effectiveDate?.millisecondsSinceEpoch ?? 0;
+              final tb = b.effectiveDate?.millisecondsSinceEpoch ?? 0;
+              return tb.compareTo(ta);
+            });
       return docs.first;
     } catch (e) {
       throw Exception('Failed to fetch pricing rate: $e');
