@@ -5,40 +5,60 @@
             <div class="dashboard-header">
                 <div class="header-titles">
                     <h1>System Settings</h1>
-                    <p>Configure global application preferences and integrations.</p>
                 </div>
                 <div class="header-actions">
-                    <button class="btn btn-outline">Cancel</button>
-                    <button class="btn btn-primary" (click)="saveSettings()">Save Changes</button>
+                    <button class="btn-save" (click)="saveSettings()">Save Changes</button>
                 </div>
             </div>
 
             <div class="settings-layout">
-                <!-- Sidebar Tabs -->
                 <div class="settings-sidebar">
                     <nav class="nav-tabs">
                         <button class="tab-btn" [class.active]="activeTab === 'general'" (click)="setTab('general')">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="3"></circle>
+                                <path
+                                    d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                                </path>
+                            </svg>
                             General
                         </button>
-                        <button class="tab-btn" [class.active]="activeTab === 'notifications'" (click)="setTab('notifications')">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                        <button class="tab-btn" [class.active]="activeTab === 'notifications'"
+                            (click)="setTab('notifications')">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                            </svg>
                             Notifications
                         </button>
                         <button class="tab-btn" [class.active]="activeTab === 'security'" (click)="setTab('security')">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                            </svg>
                             Security
                         </button>
-                        <button class="tab-btn" [class.active]="activeTab === 'integrations'" (click)="setTab('integrations')">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+                        <button class="tab-btn" [class.active]="activeTab === 'integrations'"
+                            (click)="setTab('integrations')">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <polyline points="16 18 22 12 16 6"></polyline>
+                                <polyline points="8 6 2 12 8 18"></polyline>
+                            </svg>
                             Integrations
                         </button>
                     </nav>
                 </div>
 
-                <!-- Settings Content Area -->
                 <div class="settings-content">
-                    
+
                     <!-- General Tab -->
                     <div class="tab-pane" *ngIf="activeTab === 'general'">
                         <h2>General Information</h2>
@@ -46,8 +66,10 @@
                             <div class="col" [class.has-error]="saveAttempted && !settings.general.systemName">
                                 <label>System Name <span class="required">*</span></label>
                                 <input type="text" class="form-control" [(ngModel)]="settings.general.systemName">
-                                <div class="error-message" *ngIf="saveAttempted && !settings.general.systemName">Required.</div>
-                                <span class="help-text">The name displayed on receipts and public-facing displays.</span>
+                                <div class="error-message" *ngIf="saveAttempted && !settings.general.systemName">
+                                    Required.</div>
+                                <span class="help-text">The name displayed on receipts and public-facing
+                                    displays.</span>
                             </div>
                         </div>
                         <div class="form-group row">
@@ -75,7 +97,8 @@
                         <div class="toggle-row">
                             <div class="toggle-info">
                                 <h3>Maintenance Mode</h3>
-                                <p>When enabled, system will not accept new entries, and users will see a maintenance message.</p>
+                                <p>When enabled, system will not accept new entries, and users will see a maintenance
+                                    message.</p>
                             </div>
                             <label class="switch">
                                 <input type="checkbox" [(ngModel)]="settings.general.maintenanceMode">
@@ -112,15 +135,21 @@
 
                         <h2>Thresholds</h2>
                         <div class="form-group row">
-                            <div class="col" [class.has-error]="saveAttempted && (settings.notifications.capacityThreshold == null || settings.notifications.capacityThreshold < 0 || settings.notifications.capacityThreshold > 100)">
+                            <div class="col"
+                                [class.has-error]="saveAttempted && (settings.notifications.capacityThreshold == null || settings.notifications.capacityThreshold < 0 || settings.notifications.capacityThreshold > 100)">
                                 <label>Capacity Alert Threshold (%) <span class="required">*</span></label>
-                                <input type="number" class="form-control" [(ngModel)]="settings.notifications.capacityThreshold">
-                                <div class="error-message" *ngIf="saveAttempted && (settings.notifications.capacityThreshold == null || settings.notifications.capacityThreshold < 0 || settings.notifications.capacityThreshold > 100)">Must be 0-100.</div>
-                                <span class="help-text">Triggers an alert when parking occupancy hits this percentage.</span>
+                                <input type="number" class="form-control"
+                                    [(ngModel)]="settings.notifications.capacityThreshold">
+                                <div class="error-message"
+                                    *ngIf="saveAttempted && (settings.notifications.capacityThreshold == null || settings.notifications.capacityThreshold < 0 || settings.notifications.capacityThreshold > 100)">
+                                    Must be 0-100.</div>
+                                <span class="help-text">Triggers an alert when parking occupancy hits this
+                                    percentage.</span>
                             </div>
                             <div class="col">
                                 <label>Daily Report Time</label>
-                                <input type="time" class="form-control" [(ngModel)]="settings.notifications.dailyReportTime">
+                                <input type="time" class="form-control"
+                                    [(ngModel)]="settings.notifications.dailyReportTime">
                             </div>
                         </div>
                     </div>
@@ -143,16 +172,24 @@
 
                         <h2>Session Rules</h2>
                         <div class="form-group row">
-                            <div class="col" [class.has-error]="saveAttempted && (settings.security.sessionTimeout == null || settings.security.sessionTimeout < 1)">
+                            <div class="col"
+                                [class.has-error]="saveAttempted && (settings.security.sessionTimeout == null || settings.security.sessionTimeout < 1)">
                                 <label>Session Timeout (Minutes) <span class="required">*</span></label>
-                                <input type="number" class="form-control" [(ngModel)]="settings.security.sessionTimeout">
-                                <div class="error-message" *ngIf="saveAttempted && (settings.security.sessionTimeout == null || settings.security.sessionTimeout < 1)">Invalid timeout.</div>
+                                <input type="number" class="form-control"
+                                    [(ngModel)]="settings.security.sessionTimeout">
+                                <div class="error-message"
+                                    *ngIf="saveAttempted && (settings.security.sessionTimeout == null || settings.security.sessionTimeout < 1)">
+                                    Invalid timeout.</div>
                                 <span class="help-text">Log out users automatically after a period of inactivity.</span>
                             </div>
-                            <div class="col" [class.has-error]="saveAttempted && (settings.security.passwordExpiry == null || settings.security.passwordExpiry < 1)">
+                            <div class="col"
+                                [class.has-error]="saveAttempted && (settings.security.passwordExpiry == null || settings.security.passwordExpiry < 1)">
                                 <label>Password Expiry (Days) <span class="required">*</span></label>
-                                <input type="number" class="form-control" [(ngModel)]="settings.security.passwordExpiry">
-                                <div class="error-message" *ngIf="saveAttempted && (settings.security.passwordExpiry == null || settings.security.passwordExpiry < 1)">Invalid expiry.</div>
+                                <input type="number" class="form-control"
+                                    [(ngModel)]="settings.security.passwordExpiry">
+                                <div class="error-message"
+                                    *ngIf="saveAttempted && (settings.security.passwordExpiry == null || settings.security.passwordExpiry < 1)">
+                                    Invalid expiry.</div>
                                 <span class="help-text">Force password change every X days.</span>
                             </div>
                         </div>
@@ -174,19 +211,25 @@
                         <div class="form-group row">
                             <div class="col">
                                 <label>API Key</label>
-                                <input type="password" class="form-control font-mono" [(ngModel)]="settings.integrations.apiKey">
+                                <input type="password" class="form-control font-mono"
+                                    [(ngModel)]="settings.integrations.apiKey">
                             </div>
                         </div>
-                        
+
                         <hr class="divider">
 
                         <h2>Hardware Sensors</h2>
                         <div class="form-group row">
-                            <div class="col" [class.has-error]="saveAttempted && (settings.integrations.iotSyncInterval == null || settings.integrations.iotSyncInterval < 1 || settings.integrations.iotSyncInterval > 60)">
+                            <div class="col"
+                                [class.has-error]="saveAttempted && (settings.integrations.iotSyncInterval == null || settings.integrations.iotSyncInterval < 1 || settings.integrations.iotSyncInterval > 60)">
                                 <label>IoT Sync Interval (Seconds) <span class="required">*</span></label>
-                                <input type="number" class="form-control" [(ngModel)]="settings.integrations.iotSyncInterval" min="1" max="60">
-                                <div class="error-message" *ngIf="saveAttempted && (settings.integrations.iotSyncInterval == null || settings.integrations.iotSyncInterval < 1 || settings.integrations.iotSyncInterval > 60)">Must be 1-60.</div>
-                                <span class="help-text">How often the dashboard pulls data from the parking sensors.</span>
+                                <input type="number" class="form-control"
+                                    [(ngModel)]="settings.integrations.iotSyncInterval" min="1" max="60">
+                                <div class="error-message"
+                                    *ngIf="saveAttempted && (settings.integrations.iotSyncInterval == null || settings.integrations.iotSyncInterval < 1 || settings.integrations.iotSyncInterval > 60)">
+                                    Must be 1-60.</div>
+                                <span class="help-text">How often the dashboard pulls data from the parking
+                                    sensors.</span>
                             </div>
                         </div>
                         <button class="btn btn-outline" style="margin-top: 10px;">Test Sensor Connection</button>

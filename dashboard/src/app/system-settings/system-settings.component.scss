@@ -67,13 +67,25 @@
     border: none;
 }
 
-.btn-primary {
-    background-color: #0f172a;
-    color: white;
-}
+.btn-save {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #0f172a 0%, #0d47a1 100%);
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: none;
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 4px 6px -1px rgba(13, 71, 161, 0.2);
+  transition: all 0.2s ease;
 
-.btn-primary:hover {
-    background-color: #1e293b;
+  &:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+  }
 }
 
 .btn-outline {

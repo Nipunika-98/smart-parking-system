@@ -1,1 +1,26 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"smartparkingsystem-e8234","appId":"1:177916001676:android:f7ee41ffa48f08e7d7aaa9","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"smartparkingsystem-e8234","configurations":{"android":"1:177916001676:android:f7ee41ffa48f08e7d7aaa9","ios":"1:177916001676:ios:7c3d5d2878dc10acd7aaa9","web":"1:177916001676:web:b6515932f4cd5b9cd7aaa9"}}}}}}
+{
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "smartparkingsystem-e8234",
+          "appId": "1:177916001676:android:f7ee41ffa48f08e7d7aaa9",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "smartparkingsystem-e8234",
+          "configurations": {
+            "android": "1:177916001676:android:f7ee41ffa48f08e7d7aaa9",
+            "ios": "1:177916001676:ios:7c3d5d2878dc10acd7aaa9",
+            "web": "1:177916001676:web:b6515932f4cd5b9cd7aaa9"
+          }
+        }
+      }
+    }
+  }
+}

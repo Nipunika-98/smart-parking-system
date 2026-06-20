@@ -4,47 +4,36 @@
         <div class="dashboard-header">
             <div class="header-titles">
                 <h1>Parking Rates</h1>
-                <p>Manage pricing structures for different vehicle types.</p>
-            </div>
-            <div class="header-actions">
-                <button class="btn btn-primary export-btn">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                        <polyline points="14 2 14 8 20 8"></polyline>
-                        <line x1="16" y1="13" x2="8" y2="13"></line>
-                        <line x1="16" y1="17" x2="8" y2="17"></line>
-                        <polyline points="10 9 9 9 8 9"></polyline>
-                    </svg>
-                    Export Rate Sheet
-                </button>
             </div>
         </div>
 
         <div class="dashboard-content rates-content">
-            <!-- Rate Cards Grid -->
-            <div class="rates-grid">
+            <!-- Loading Overlay -->
+            <div class="loading-overlay" *ngIf="isLoading">
+                <div class="spinner"></div>
+                <span>Syncing with Database...</span>
+            </div>
 
+            <div class="rates-grid">
                 <!-- Car Rates -->
                 <div class="rate-card">
                     <div class="card-header">
                         <div class="vehicle-info">
                             <div class="icon-wrapper blue">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
-                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                    stroke-linejoin="round">
-                                    <rect x="2" y="7" width="20" height="12" rx="2" ry="2" />
-                                    <path d="M4 11V7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4" />
-                                    <circle cx="7" cy="15" r="1" />
-                                    <circle cx="17" cy="15" r="1" />
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2" />
+                                    <circle cx="7" cy="17" r="2" />
+                                    <path d="M9 17h6" />
+                                    <circle cx="17" cy="17" r="2" />
                                 </svg>
                             </div>
                             <div class="title-group">
-                                <h3>{{ rates.car.type }}</h3>
-                                <span class="plan-name">{{ rates.car.plan }}</span>
+                                <h3>{{ rates['car'].type }}</h3>
+                                <span class="plan-name">{{ rates['car'].plan }}</span>
                             </div>
                         </div>
-                        <span class="badge active">{{ rates.car.status }}</span>
+                        <span class="badge active">{{ rates['car'].status }}</span>
                     </div>
 
                     <div class="rate-list">
@@ -59,7 +48,7 @@
                                 First Hour (Base)
                             </div>
                             <div class="value">
-                                <span class="currency">LKR</span> {{ rates.car.firstHour }}
+                                <span class="currency">LKR</span> {{ rates['car'].firstHour }}
                             </div>
                         </div>
                         <div class="rate-item">
@@ -73,7 +62,7 @@
                                 Subsequent Hours
                             </div>
                             <div class="value">
-                                <span class="currency">LKR</span> {{ rates.car.subsequentHour }}/<br />hr
+                                <span class="currency">LKR</span> {{ rates['car'].subsequentHour }}/<br />hr
                             </div>
                         </div>
                         <div class="rate-item">
@@ -89,7 +78,7 @@
                                 Daily Maximum
                             </div>
                             <div class="value">
-                                <span class="currency">LKR</span> {{ rates.car.dailyMax }}
+                                <span class="currency">LKR</span> {{ rates['car'].dailyMax }}
                             </div>
                         </div>
                         <div class="rate-item warning">
@@ -104,12 +93,15 @@
                                 Lost Ticket
                             </div>
                             <div class="value">
-                                <span class="currency">LKR</span> {{ rates.car.lostTicket }}
+                                <span class="currency">LKR</span> {{ rates['car'].lostTicket }}
                             </div>
                         </div>
                     </div>
 
-                    <button class="btn btn-outline edit-btn" (click)="openEditModal('car')">Edit Rates</button>
+                    <div class="card-actions">
+                        <button class="btn btn-outline edit-btn" (click)="openEditModal('car')">Edit Rates</button>
+                        <button class="btn btn-outline edit-btn" (click)="openHistory('car')">Pricing History</button>
+                    </div>
                 </div>
 
                 <!-- Bike Rates -->
@@ -117,27 +109,21 @@
                     <div class="card-header">
                         <div class="vehicle-info">
                             <div class="icon-wrapper green">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
-                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                    stroke-linejoin="round">
-                                    <path d="M15 15l4.5 4.5" />
-                                    <path d="M9 15l-4.5 4.5" />
-                                    <path d="M12 9l-9 9" />
-                                    <path d="M12 9l9 9" />
-                                    <path d="M16 4h4" />
-                                    <path d="M20 4v4" />
-                                    <path d="M20 4l-5 5" />
-                                    <path d="M4 4h4" />
-                                    <path d="M4 4v4" />
-                                    <path d="M4 4l5 5" />
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="18.5" cy="17.5" r="2.5" />
+                                    <circle cx="5.5" cy="17.5" r="2.5" />
+                                    <path d="M15 11l2-4h3l-3 8" />
+                                    <path d="M10 10l2-6h3l-2 6" />
+                                    <path d="M10 18H6.5L4 13h11l-2 5h-3z" />
                                 </svg>
                             </div>
                             <div class="title-group">
-                                <h3>{{ rates.bike.type }}</h3>
-                                <span class="plan-name">{{ rates.bike.plan }}</span>
+                                <h3>{{ rates['bike'].type }}</h3>
+                                <span class="plan-name">{{ rates['bike'].plan }}</span>
                             </div>
                         </div>
-                        <span class="badge active">{{ rates.bike.status }}</span>
+                        <span class="badge active">{{ rates['bike'].status }}</span>
                     </div>
 
                     <div class="rate-list">
@@ -152,7 +138,7 @@
                                 First Hour (Base)
                             </div>
                             <div class="value">
-                                <span class="currency">LKR</span> {{ rates.bike.firstHour }}
+                                <span class="currency">LKR</span> {{ rates['bike'].firstHour }}
                             </div>
                         </div>
                         <div class="rate-item">
@@ -166,7 +152,7 @@
                                 Subsequent Hours
                             </div>
                             <div class="value">
-                                <span class="currency">LKR</span> {{ rates.bike.subsequentHour }}/<br />hr
+                                <span class="currency">LKR</span> {{ rates['bike'].subsequentHour }}/<br />hr
                             </div>
                         </div>
                         <div class="rate-item">
@@ -182,7 +168,7 @@
                                 Daily Maximum
                             </div>
                             <div class="value">
-                                <span class="currency">LKR</span> {{ rates.bike.dailyMax }}
+                                <span class="currency">LKR</span> {{ rates['bike'].dailyMax }}
                             </div>
                         </div>
                         <div class="rate-item warning">
@@ -197,12 +183,15 @@
                                 Lost Ticket
                             </div>
                             <div class="value">
-                                <span class="currency">LKR</span> {{ rates.bike.lostTicket }}
+                                <span class="currency">LKR</span> {{ rates['bike'].lostTicket }}
                             </div>
                         </div>
                     </div>
 
-                    <button class="btn btn-outline edit-btn" (click)="openEditModal('bike')">Edit Rates</button>
+                    <div class="card-actions">
+                        <button class="btn btn-outline edit-btn" (click)="openEditModal('bike')">Edit Rates</button>
+                        <button class="btn btn-outline edit-btn" (click)="openHistory('bike')">Pricing History</button>
+                    </div>
                 </div>
 
                 <!-- Three-wheeler Rates -->
@@ -210,20 +199,22 @@
                     <div class="card-header">
                         <div class="vehicle-info">
                             <div class="icon-wrapper orange">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
-                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                    stroke-linejoin="round">
-                                    <rect x="2" y="7" width="20" height="12" rx="2" ry="2" />
-                                    <path d="M4 11V7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4" />
-                                    <circle cx="12" cy="15" r="1" />
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" 
+                                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 18h4a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h4z" />
+                                    <path d="M12 10V6a2 2 0 0 0-2-2H8" />
+                                    <path d="M16 10V6a2 2 0 0 1 2-2h2" />
+                                    <circle cx="12" cy="18" r="2" />
+                                    <circle cx="7" cy="16" r="2" />
+                                    <circle cx="17" cy="16" r="2" />
                                 </svg>
                             </div>
                             <div class="title-group">
-                                <h3>{{ rates.threeWheeler.type }}</h3>
-                                <span class="plan-name">{{ rates.threeWheeler.plan }}</span>
+                                <h3>{{ rates['threeWheeler'].type }}</h3>
+                                <span class="plan-name">{{ rates['threeWheeler'].plan }}</span>
                             </div>
                         </div>
-                        <span class="badge active">{{ rates.threeWheeler.status }}</span>
+                        <span class="badge active">{{ rates['threeWheeler'].status }}</span>
                     </div>
 
                     <div class="rate-list">
@@ -238,7 +229,7 @@
                                 First Hour (Base)
                             </div>
                             <div class="value">
-                                <span class="currency">LKR</span> {{ rates.threeWheeler.firstHour }}
+                                <span class="currency">LKR</span> {{ rates['threeWheeler'].firstHour }}
                             </div>
                         </div>
                         <div class="rate-item">
@@ -252,7 +243,7 @@
                                 Subsequent Hours
                             </div>
                             <div class="value">
-                                <span class="currency">LKR</span> {{ rates.threeWheeler.subsequentHour }}/<br />hr
+                                <span class="currency">LKR</span> {{ rates['threeWheeler'].subsequentHour }}/<br />hr
                             </div>
                         </div>
                         <div class="rate-item">
@@ -268,7 +259,7 @@
                                 Daily Maximum
                             </div>
                             <div class="value">
-                                <span class="currency">LKR</span> {{ rates.threeWheeler.dailyMax }}
+                                <span class="currency">LKR</span> {{ rates['threeWheeler'].dailyMax }}
                             </div>
                         </div>
                         <div class="rate-item warning">
@@ -283,12 +274,15 @@
                                 Lost Ticket
                             </div>
                             <div class="value">
-                                <span class="currency">LKR</span> {{ rates.threeWheeler.lostTicket }}
+                                <span class="currency">LKR</span> {{ rates['threeWheeler'].lostTicket }}
                             </div>
                         </div>
                     </div>
 
-                    <button class="btn btn-outline edit-btn" (click)="openEditModal('threeWheeler')">Edit Rates</button>
+                    <div class="card-actions">
+                        <button class="btn btn-outline edit-btn" (click)="openEditModal('threeWheeler')">Edit Rates</button>
+                        <button class="btn btn-outline edit-btn" (click)="openHistory('threeWheeler')">Pricing History</button>
+                    </div>
                 </div>
             </div>
 
@@ -383,6 +377,56 @@
             <div class="modal-footer">
                 <button class="btn btn-outline" (click)="closeModal()">Cancel</button>
                 <button class="btn btn-primary" (click)="saveRates()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- History Modal -->
+    <div class="modal-overlay" *ngIf="isHistoryModalOpen">
+        <div class="modal-container history-modal">
+            <div class="modal-header">
+                <div class="header-with-icon">
+                    <div class="history-icon-circle">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </div>
+                    <h2>{{ rates[selectedVehicleKey].type }} Pricing History</h2>
+                </div>
+                <button class="close-btn" (click)="closeModal()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body history-body">
+                <div class="history-table-wrapper">
+                    <table class="history-table">
+                        <thead>
+                            <tr>
+                                <th>Effective Date</th>
+                                <th>First Hr</th>
+                                <th>Sub. Hr</th>
+                                <th>Max</th>
+                                <th>Lost</th>
+                                <th>Admin</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngFor="let record of historyList">
+                                <td class="date-cell">{{ formatDate(record.effectiveDate) }}</td>
+                                <td class="currency-val">LKR {{ record.firstHour }}</td>
+                                <td class="currency-val">LKR {{ record.subsequentHour }}</td>
+                                <td class="currency-val">LKR {{ record.dailyMax }}</td>
+                                <td class="currency-val">LKR {{ record.lostTicket }}</td>
+                                <td class="admin-cell">{{ record.adminEmail || 'System' }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" (click)="closeModal()">Close</button>
             </div>
         </div>
     </div>

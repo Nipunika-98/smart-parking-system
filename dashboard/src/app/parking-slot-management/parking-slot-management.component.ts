@@ -1,6 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SidebarComponent } from '../sidebar/sidebar.component';
+import { db } from '../firebase.config';
+import { collection, onSnapshot, doc, updateDoc, Unsubscribe } from 'firebase/firestore';
 
 @Component({
   selector: 'app-parking-slot-management',
@@ -9,106 +11,133 @@ import { SidebarComponent } from '../sidebar/sidebar.component';
   templateUrl: './parking-slot-management.component.html',
   styleUrl: './parking-slot-management.component.scss'
 })
-export class ParkingSlotManagementComponent {
-  selectedLevel = 'Level 2';
-  selectedFilter: 'All' | 'Cars' | 'Bikes' | '3-Wheel' = 'All';
+export class ParkingSlotManagementComponent implements OnInit, OnDestroy {
+  private unsubscribeSlots?: Unsubscribe;
 
-  levels = ['Level 1', 'Level 2', 'Level 3', 'Level 4'];
+  selectedLevel = 'Level 1';
+  selectedFilter = 'All';
+
+  levels = ['Level 1', 'Level 2', 'Level 3', 'All'];
   filters = ['All', 'Cars', 'Bikes', '3-Wheel'];
 
-  filledCount = 11;
-  emptyCount = 29;
+  filledCount = 0;
+  emptyCount = 0;
+  
+  allZones: any[] = [];
 
-  zones = [
-    {
-      id: 'A',
-      name: 'Zone A',
-      left: [
-        { id: 'A1', type: 'car', state: 'filled-red' },
-        { id: 'A2', type: 'car', state: 'empty' },
-        { id: 'A3', type: 'car', state: 'empty' },
-        { id: 'A4', type: 'car', state: 'empty' }
-      ],
-      right: [
-        { id: 'A5', type: 'car', state: 'empty' },
-        { id: 'A6', type: 'car', state: 'empty' },
-        { id: 'A7', type: 'car', state: 'empty' },
-        { id: 'A8', type: 'car', state: 'empty' }
-      ]
-    },
-    {
-      id: 'B',
-      name: 'Zone B',
-      left: [
-        { id: 'B1', type: 'car', state: 'empty' },
-        { id: 'B2', type: 'car', state: 'filled-dark' },
-        { id: 'B3', type: 'car', state: 'empty' },
-        { id: 'B4', type: 'car', state: 'empty' }
-      ],
-      right: [
-        { id: 'B5', type: 'car', state: 'empty-car' },
-        { id: 'B6', type: 'car', state: 'empty' },
-        { id: 'B7', type: 'car', state: 'filled-dark' },
-        { id: 'B8', type: 'car', state: 'filled-red' }
-      ]
-    },
-    {
-      id: 'C',
-      name: 'Zone C',
-      hasEntry: true,
-      left: [
-        { id: 'C1', type: 'car', state: 'empty' },
-        { id: 'C2', type: 'car', state: 'filled-light' },
-        { id: 'C3', type: 'car', state: 'empty' },
-        { id: 'C4', type: 'car', state: 'empty' }
-      ],
-      right: [
-        { id: 'C5', type: 'car', state: 'empty' },
-        { id: 'C6', type: 'car', state: 'empty' },
-        { id: 'C7', type: 'car', state: 'empty' },
-        { id: 'C8', type: 'car', state: 'filled-dark' }
-      ]
-    },
-    {
-      id: 'D',
-      name: 'Zone D',
-      left: [
-        { id: 'D1', type: 'car', state: 'filled-red' },
-        { id: 'D2', type: 'car', state: 'empty' },
-        { id: 'D3', type: '3wheel', state: 'empty-3wheel' },
-        { id: 'D4', type: 'car', state: 'empty' }
-      ],
-      right: [
-        { id: 'D5', type: 'car', state: 'empty' },
-        { id: 'D6', type: 'car', state: 'empty' },
-        { id: 'D7', type: 'car', state: 'empty' },
-        { id: 'D8', type: 'car', state: 'empty' }
-      ]
-    },
-    {
-      id: 'E',
-      name: 'Zone E',
-      hasExit: true,
-      left: [
-        { id: 'E1', type: 'car', state: 'empty' },
-        { id: 'E2', type: 'car', state: 'empty' },
-        { id: 'E3', type: 'car', state: 'empty' },
-        { id: 'E4', type: 'car', state: 'empty' }
-      ],
-      right: [
-        { id: 'E5', type: 'car', state: 'empty' },
-        { id: 'E6', type: 'car', state: 'empty' },
-        { id: 'E7', type: 'bike', state: 'filled-bikes' },
-        { id: 'E8', type: 'bike', state: 'empty-bikes' }
-      ]
+  async ngOnInit() {
+    this.setupRealtimeListener();
+  }
+
+  ngOnDestroy() {
+    if (this.unsubscribeSlots) {
+      this.unsubscribeSlots();
     }
-  ];
+  }
+
+  setupRealtimeListener() {
+    try {
+      this.unsubscribeSlots = onSnapshot(collection(db, 'parking_slots'), (snap) => {
+        const slots = snap.docs.map(doc => ({ ...(doc.data() as any), docId: doc.id }));
+        
+        const grouped: { [key: string]: any[] } = {
+          'A': [], 'B': [], 'C': [], 'D': [], 'E': [], 'F': []
+        };
+        
+        slots.forEach(s => {
+          const slotNumber = s['slotNumber'] as string;
+          if (slotNumber) {
+            const section = slotNumber.split('-')[0];
+            const numericPart = parseInt(slotNumber.split('-')[1], 10);
+            
+            let type = 'car';
+            if (numericPart > 5) {
+              type = ['A', 'C', 'E'].includes(section) ? '3wheel' : 'bike';
+            }
+
+            let state = 'empty';
+            const dbStatus = s['status'];
+            if (dbStatus === 'AVAILABLE') {
+              state = type === 'car' ? 'empty' : `empty-${type === '3wheel' ? '3wheel' : 'bikes'}`;
+            } else if (dbStatus === 'MAINTENANCE') {
+              state = 'maintenance';
+            } else {
+              state = type === 'car' ? 'filled-dark' : `filled-${type === '3wheel' ? '3wheel' : 'bikes'}`;
+            }
+            if (grouped[section]) {
+              grouped[section].push({ 
+                id: slotNumber, 
+                displayId: slotNumber.replace('-', ''), 
+                type, 
+                state,
+                docId: s['docId'],
+                rawStatus: dbStatus
+              });
+            }
+          }
+        });
+        
+        this.allZones = Object.keys(grouped).map(section => {
+          const sectionSlots = grouped[section].sort((a,b) => a.id.localeCompare(b.id));
+          return {
+            id: section,
+            name: `Zone ${section}`,
+            level: section === 'A' || section === 'B' ? 'Level 1' : 
+                   section === 'C' || section === 'D' ? 'Level 2' : 'Level 3',
+            left: sectionSlots.slice(0, 5),
+            right: sectionSlots.slice(5, 10)
+          };
+        });
+        
+        this.updateCounts();
+      }, (error) => {
+        console.error("Error listening to slots:", error);
+      });
+    } catch (e) {
+      console.error("Error setting up listener", e);
+    }
+  }
+
+  get displayedZones() {
+    if (this.selectedLevel === 'All') return this.allZones;
+    return this.allZones.filter(z => z.level === this.selectedLevel);
+  }
 
   selectLevel(level: string) {
     this.selectedLevel = level;
-    // Simulate floor swap by randomizing filled/empty slightly
-    this.filledCount = Math.floor(Math.random() * 20) + 5;
-    this.emptyCount = 40 - this.filledCount;
+    this.updateCounts();
+  }
+  
+  updateCounts() {
+    let empty = 0;
+    let filled = 0;
+    this.displayedZones.forEach(z => {
+      z.left.forEach((s: any) => s.state.includes('empty') ? empty++ : filled++);
+      z.right.forEach((s: any) => s.state.includes('empty') ? empty++ : filled++);
+    });
+    this.emptyCount = empty;
+    this.filledCount = filled;
+  }
+
+  async toggleSlotStatus(slot: any) {
+    if (!slot || !slot.docId) return;
+
+    let nextStatus = 'AVAILABLE';
+    if (slot.rawStatus === 'AVAILABLE') nextStatus = 'OCCUPIED';
+    else if (slot.rawStatus === 'OCCUPIED') nextStatus = 'MAINTENANCE';
+    else nextStatus = 'AVAILABLE'; 
+
+    try {
+      const docRef = doc(db, 'parking_slots', slot.docId);
+      await updateDoc(docRef, { status: nextStatus, lastUpdated: new Date() });
+    } catch (err) {
+      console.error("Failed to update slot status:", err);
+      alert('Error updating slot status. Make sure you have sufficient permissions.');
+    }
+  }
+
+  reportProblem() {
+    alert("Report Problem Modal will be launched here. (Support Ticket system integration)");
   }
 
   selectFilter(filter: any) {

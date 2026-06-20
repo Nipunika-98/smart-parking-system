@@ -1,7 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SidebarComponent } from '../sidebar/sidebar.component';
+import { db } from '../firebase.config';
+import { doc, onSnapshot, setDoc, Unsubscribe } from 'firebase/firestore';
 
 @Component({
   selector: 'app-system-settings',
@@ -10,8 +12,10 @@ import { SidebarComponent } from '../sidebar/sidebar.component';
   templateUrl: './system-settings.component.html',
   styleUrl: './system-settings.component.scss'
 })
-export class SystemSettingsComponent {
+export class SystemSettingsComponent implements OnInit, OnDestroy {
   activeTab = 'general';
+  
+  private unsubscribeSettings?: Unsubscribe;
 
   settings = {
     general: {
@@ -38,6 +42,24 @@ export class SystemSettingsComponent {
     }
   };
 
+  ngOnInit() {
+    this.unsubscribeSettings = onSnapshot(doc(db, 'system_config', 'general_settings'), (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        if (data['general']) this.settings.general = data['general'];
+        if (data['notifications']) this.settings.notifications = data['notifications'];
+        if (data['security']) this.settings.security = data['security'];
+        if (data['integrations']) this.settings.integrations = data['integrations'];
+      }
+    });
+  }
+
+  ngOnDestroy() {
+    if (this.unsubscribeSettings) {
+      this.unsubscribeSettings();
+    }
+  }
+
   setTab(tab: string) {
     this.activeTab = tab;
   }
@@ -54,11 +76,17 @@ export class SystemSettingsComponent {
     return true;
   }
 
-  saveSettings() {
+  async saveSettings() {
     this.saveAttempted = true;
     if (this.isFormValid()) {
-      alert('Settings saved successfully!');
-      this.saveAttempted = false;
+      try {
+        await setDoc(doc(db, 'system_config', 'general_settings'), this.settings, { merge: true });
+        alert('Settings saved successfully!');
+        this.saveAttempted = false;
+      } catch (e) {
+        console.error("Error saving config: ", e);
+        alert('Failed to save settings. Please try again.');
+      }
     }
   }
 }

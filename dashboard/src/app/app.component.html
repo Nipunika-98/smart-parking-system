@@ -1,1 +1,10 @@
+@if (!(isInitialized$ | async)) {
+<div class="app-loading">
+    <div class="loader-content">
+        <div class="spinner"></div>
+        <h1>Smart Parking</h1>
+        <p>Initializing secure dashboard...</p>
+    </div>
+</div>
+}
 <router-outlet></router-outlet>

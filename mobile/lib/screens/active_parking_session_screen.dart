@@ -1,30 +1,97 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:mobile/constants/app_colors.dart';
 import 'package:mobile/screens/bottom_navigation.dart';
-import 'package:mobile/screens/payment_successful_screen.dart';
+import 'package:mobile/services/auth_service.dart';
+import 'package:mobile/models/parking_session_model.dart';
+import 'package:intl/intl.dart';
+import 'package:mobile/screens/qr_scan_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:mobile/providers/parking_provider.dart';
 
-class ActiveParkingSessionScreen extends StatelessWidget {
+class ActiveParkingSessionScreen extends StatefulWidget {
   const ActiveParkingSessionScreen({super.key});
+
+  @override
+  State<ActiveParkingSessionScreen> createState() => _ActiveParkingSessionScreenState();
+}
+
+class _ActiveParkingSessionScreenState extends State<ActiveParkingSessionScreen> {
+  final AuthService _authService = AuthService();
+
+  Timer? _timer;
+  Duration _elapsed = Duration.zero;
+  DateTime? _entryTime;
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  void _startTimer(DateTime entryTime) {
+    if (_entryTime == entryTime && _timer != null) return;
+    _entryTime = entryTime;
+    _elapsed = DateTime.now().difference(entryTime);
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) {
+        setState(() => _elapsed = DateTime.now().difference(entryTime));
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF6F7FB),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.only(bottom: 24),
-          child: Column(
-            children: [
-              _buildHeader(context),
-              const SizedBox(height: 16),
-              _buildTicketCard(),
-              const SizedBox(height: 16),
-              _buildDurationCard(),
-              const SizedBox(height: 20),
-              _buildExitButton(context),
-            ],
-          ),
-        ),
+        child: _authService.currentUser == null
+            ? const Center(child: Text('Not logged in'))
+            : Consumer<ParkingProvider>(
+                builder: (context, provider, _) {
+                  if (provider.activeSessions.isEmpty) {
+                    return ListView(
+                      children: [
+                        _buildHeader(context),
+                        const SizedBox(height: 60),
+                        const Center(
+                          child: Text(
+                            'No active parking session found.',
+                            style: TextStyle(fontSize: 16),
+                          ),
+                        ),
+                      ],
+                    );
+                  }
+                  final session = provider.activeSessions.first;
+                  if (_entryTime == null || _entryTime != session.entryTime) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      _startTimer(session.entryTime);
+                    });
+                  }
+
+                  return SingleChildScrollView(
+                    padding: const EdgeInsets.only(bottom: 24),
+                    child: Column(
+                      children: [
+                        _buildHeader(context),
+                        const SizedBox(height: 16),
+                        _buildTicketCard(session),
+                        const SizedBox(height: 16),
+                        _buildDurationCard(),
+                        const SizedBox(height: 20),
+                        _buildExitButton(context, session),
+                      ],
+                    ),
+                  );
+                },
+              ),
       ),
     );
   }
@@ -56,7 +123,6 @@ class ActiveParkingSessionScreen extends StatelessWidget {
               ],
             ),
           ),
-
           const SizedBox(height: 16),
           const Text(
             'Active Parking Session',
@@ -70,7 +136,7 @@ class ActiveParkingSessionScreen extends StatelessWidget {
   }
 
   // ---------------- TICKET CARD ----------------
-  Widget _buildTicketCard() {
+  Widget _buildTicketCard(ParkingSessionModel session) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Card(
@@ -87,12 +153,14 @@ class ActiveParkingSessionScreen extends StatelessWidget {
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Text('User ID', style: TextStyle(color: Colors.white70)),
-                  SizedBox(height: 6),
+                children: [
+                  const Text('User ID', style: TextStyle(color: Colors.white70)),
+                  const SizedBox(height: 6),
                   Text(
-                    'USR-2024-8472',
-                    style: TextStyle(
+                    session.userId.length > 8
+                        ? 'USR-${session.userId.substring(0, 8)}'
+                        : session.userId,
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -105,35 +173,42 @@ class ActiveParkingSessionScreen extends StatelessWidget {
             _infoRow(
               icon: Icons.calendar_today,
               title: 'Entry Date',
-              value: 'Dec 7, 2025',
+              value: DateFormat('MMM d, yyyy').format(session.entryTime),
               icon2: Icons.access_time,
               title2: 'Entry Time',
-              value2: '10:45 AM',
+              value2: DateFormat('h:mm a').format(session.entryTime),
             ),
             const Divider(height: 1),
             _singleInfo(
               icon: Icons.confirmation_number,
               title: 'Ticket Number',
-              value: 'TKT-2025-120478',
+              value: session.ticketNumber,
             ),
             const Divider(height: 1),
+            // Removed QR code section here
             Padding(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
               child: Column(
                 children: [
                   Container(
-                    height: 220,
-                    width: 220,
+                    padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: AppColors.teal,
-                      borderRadius: BorderRadius.circular(20),
+                      color: Colors.blue.withValues(alpha: 0.05),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.blue.withValues(alpha: 0.1)),
                     ),
-                    child: const Center(child: Icon(Icons.qr_code, size: 120, color: Colors.white)),
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'Scan this code at exit gate',
-                    style: TextStyle(color: Colors.black54),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.info_outline, color: Colors.blue, size: 20),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Please scan the QR code displayed at the exit gate to finish your session.',
+                            style: TextStyle(color: Colors.blue, fontSize: 13, height: 1.4),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -168,7 +243,10 @@ class ActiveParkingSessionScreen extends StatelessWidget {
     required String title,
     required String value,
   }) {
-    return Padding(padding: const EdgeInsets.all(16), child: _infoItem(icon, title, value));
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: _infoItem(icon, title, value),
+    );
   }
 
   static Widget _infoItem(IconData icon, String title, String value) {
@@ -188,8 +266,12 @@ class ActiveParkingSessionScreen extends StatelessWidget {
     );
   }
 
-  // ---------------- DURATION CARD ----------------
+  // ---------------- LIVE DURATION CARD ----------------
   Widget _buildDurationCard() {
+    final hours = _elapsed.inHours.toString().padLeft(2, '0');
+    final minutes = (_elapsed.inMinutes % 60).toString().padLeft(2, '0');
+    final seconds = (_elapsed.inSeconds % 60).toString().padLeft(2, '0');
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Container(
@@ -207,10 +289,10 @@ class ActiveParkingSessionScreen extends StatelessWidget {
             const SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: const [
-                _TimeBox('00', 'Hours'),
-                _TimeBox('02', 'Minutes'),
-                _TimeBox('31', 'Seconds'),
+              children: [
+                _TimeBox(hours, 'Hours'),
+                _TimeBox(minutes, 'Minutes'),
+                _TimeBox(seconds, 'Seconds'),
               ],
             ),
           ],
@@ -220,26 +302,38 @@ class ActiveParkingSessionScreen extends StatelessWidget {
   }
 
   // ---------------- EXIT BUTTON ----------------
-  Widget _buildExitButton(BuildContext context) {
+  Widget _buildExitButton(BuildContext context, ParkingSessionModel session) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: SizedBox(
+      child: Container(
         width: double.infinity,
-        height: 54,
-        child: ElevatedButton(
+        height: 60,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(30),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primaryColor.withValues(alpha: 0.3),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            )
+          ],
+        ),
+        child: ElevatedButton.icon(
           onPressed: () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => const PaymentSuccessfulScreen()),
+              MaterialPageRoute(builder: (_) => const QrScanScreen()),
             );
           },
+          icon: const Icon(Icons.qr_code_scanner, color: Colors.white),
+          label: const Text(
+            'Scan Exit QR at Gate',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+          ),
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.primaryColor,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-          ),
-          child: const Text(
-            'Proceed to Exit',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.white),
+            elevation: 0,
           ),
         ),
       ),
@@ -267,7 +361,8 @@ class _TimeBox extends StatelessWidget {
         children: [
           Text(
             value,
-            style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold),
+            style: const TextStyle(
+                color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 4),
           Text(label, style: const TextStyle(color: Colors.white70)),

@@ -4,7 +4,6 @@
         <div class="dashboard-header">
             <div class="header-titles">
                 <h1>Dashboard Overview</h1>
-                <p>Real-time parking statistics and system status.</p>
             </div>
             <div class="header-actions">
                 <div class="last-updated">
@@ -18,10 +17,7 @@
             </div>
         </div>
 
-        <!-- The rest of the dashboard content will go here -->
         <div class="dashboard-content">
-
-            <!-- Statistics Cards Grid -->
             <div class="stats-grid">
                 <!-- Available Slots -->
                 <div class="stat-card border-green">
@@ -81,7 +77,15 @@
                 <div class="stat-card border-blue">
                     <div class="stat-header">
                         <h3>Total Revenue</h3>
-                        <span class="icon-text blue">$</span>
+                        <div class="icon slate">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <rect x="2" y="6" width="20" height="12" rx="2"></rect>
+                                <circle cx="12" cy="12" r="2"></circle>
+                                <path d="M6 12h.01M18 12h.01"></path>
+                            </svg>
+                        </div>
                     </div>
                     <div class="stat-body">
                         <h2>{{ totalRevenue.amount }}</h2>
@@ -110,12 +114,16 @@
             <!-- Lower Content Area for Charts and Lists -->
             <div class="dashboard-lower">
                 <div class="chart-container">
-                    <div class="chart-header" style="display: flex; justify-content: space-between; align-items: center;">
+                    <div class="chart-header"
+                        style="display: flex; justify-content: space-between; align-items: center;">
                         <h4>Parking Usage Trends</h4>
                         <div class="time-filters">
-                            <button [class.active]="activeTimeFilter === 'Today'" (click)="setTimeFilter('Today')" class="filter-btn">Today</button>
-                            <button [class.active]="activeTimeFilter === 'Week'" (click)="setTimeFilter('Week')" class="filter-btn">Week</button>
-                            <button [class.active]="activeTimeFilter === 'Month'" (click)="setTimeFilter('Month')" class="filter-btn">Month</button>
+                            <button [class.active]="activeTimeFilter === 'Today'" (click)="setTimeFilter('Today')"
+                                class="filter-btn">Today</button>
+                            <button [class.active]="activeTimeFilter === 'Week'" (click)="setTimeFilter('Week')"
+                                class="filter-btn">Week</button>
+                            <button [class.active]="activeTimeFilter === 'Month'" (click)="setTimeFilter('Month')"
+                                class="filter-btn">Month</button>
                         </div>
                     </div>
                     <div class="chart-wrapper">
@@ -128,27 +136,28 @@
                         <h4>Recent Activity</h4>
                     </div>
                     <div class="activity-list">
-                        @for (activity of activities; track activity.title) {
+                        @for (activity of activities; track activity.timestampMs + activity.type) {
                         <div class="activity-item">
                             <div class="activity-icon-area">
-                                <div class="status-icon {{ activity.type }}">
-                                    @if (activity.type === 'success') {
+                                <div class="status-icon"
+                                    [ngClass]="{'success': activity.type === 'PENDING', 'info': activity.type === 'PAID'}">
+                                    @if (activity.type === 'PENDING') {
                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
                                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                                         stroke-linejoin="round">
-                                        <line x1="12" y1="5" x2="12" y2="19"></line>
-                                        <polyline points="19 12 12 19 5 12"></polyline>
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <polyline points="12 6 12 12 16 14"></polyline>
                                     </svg>
                                     }
-                                    @if (activity.type === 'info') {
+                                    @if (activity.type === 'PAID') {
                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
                                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                                         stroke-linejoin="round">
-                                        <line x1="12" y1="19" x2="12" y2="5"></line>
-                                        <polyline points="5 12 12 5 19 12"></polyline>
+                                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
                                     </svg>
                                     }
-                                    @if (activity.type === 'error') {
+                                    @if (activity.type === 'error' || activity.type === 'OVERDUE') {
                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
                                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                                         stroke-linejoin="round">

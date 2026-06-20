@@ -6,15 +6,18 @@ import { TransactionLogsComponent } from './transaction-logs/transaction-logs.co
 import { ReportsComponent } from './reports/reports.component';
 import { ParkingSlotManagementComponent } from './parking-slot-management/parking-slot-management.component';
 import { UserDirectoryComponent } from './user-directory/user-directory.component';
-import { SystemSettingsComponent } from './system-settings/system-settings.component'; // Re-trigger compile
+import { SystemSettingsComponent } from './system-settings/system-settings.component';
+import { authGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
-  { path: '', component: LoginComponent },
-  { path: 'dashboard', component: DashboardComponent },
-  { path: 'parking-rates', component: ParkingRatesComponent },
-  { path: 'transaction-logs', component: TransactionLogsComponent },
-  { path: 'reports', component: ReportsComponent },
-  { path: 'parking-slot-management', component: ParkingSlotManagementComponent },
-  { path: 'user-directory', component: UserDirectoryComponent },
-  { path: 'system-settings', component: SystemSettingsComponent }
+  { path: '', redirectTo: 'login', pathMatch: 'full' },
+  { path: 'login', component: LoginComponent },
+  { path: 'dashboard', component: DashboardComponent, canActivate: [authGuard] },
+  { path: 'parking-rates', component: ParkingRatesComponent, canActivate: [authGuard] },
+  { path: 'transaction-logs', component: TransactionLogsComponent, canActivate: [authGuard] },
+  { path: 'reports', component: ReportsComponent, canActivate: [authGuard] },
+  { path: 'parking-slot-management', component: ParkingSlotManagementComponent, canActivate: [authGuard] },
+  { path: 'user-directory', component: UserDirectoryComponent, canActivate: [authGuard] },
+  { path: 'system-settings', component: SystemSettingsComponent, canActivate: [authGuard] },
+  { path: '**', redirectTo: 'login' }
 ];
