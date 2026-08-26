@@ -122,19 +122,77 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.pendingPayments.count = pending;
     this.pendingPayments.label = `${pending} sessions active`;
 
-    this.updateCharts(total);
+    this.updateCharts();
   }
 
-  private updateCharts(total: number) {
+  private getOccupancyAt(t: Date): number {
+    const capacity = this.totalParking.count || 10;
+    let occupiedCount = 0;
+
+    this.allSessions.forEach(s => {
+      if (!s.entryTime) return;
+      const entered = s.entryTime.getTime() <= t.getTime();
+      const notExitedYet = !s.exitTime || s.exitTime.getTime() > t.getTime();
+      if (entered && notExitedYet) {
+        occupiedCount++;
+      }
+    });
+
+    return Math.min(100, Math.round((occupiedCount / capacity) * 100));
+  }
+
+  private getDailyAverageOccupancy(date: Date): number {
+    const hours = [9, 12, 15, 18];
+    let totalOccupancy = 0;
+    hours.forEach(hour => {
+      const t = new Date(date.getFullYear(), date.getMonth(), date.getDate(), hour, 0, 0);
+      totalOccupancy += this.getOccupancyAt(t);
+    });
+    return Math.round(totalOccupancy / hours.length);
+  }
+
+  private updateCharts() {
+    const now = new Date();
+    
     if (this.activeTimeFilter === 'Today') {
+      const targetHours = [6, 9, 12, 15, 18, 21];
       this.barChartData.labels = ['6am', '9am', '12pm', '3pm', '6pm', '9pm'];
-      this.barChartData.datasets[0].data = [total * 0.1, total * 0.2, total * 0.3, total * 0.2, total * 0.15, total * 0.05];
+      this.barChartData.datasets[0].data = targetHours.map(hour => {
+        const t = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hour, 0, 0);
+        return this.getOccupancyAt(t);
+      });
     } else if (this.activeTimeFilter === 'Week') {
       this.barChartData.labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-      this.barChartData.datasets[0].data = [total * 0.1, total * 0.15, total * 0.2, total * 0.2, total * 0.2, total * 0.1, total * 0.05];
+      const currentDay = now.getDay();
+      const mondayOffset = currentDay === 0 ? -6 : 1 - currentDay;
+      const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + mondayOffset);
+      
+      this.barChartData.datasets[0].data = Array.from({ length: 7 }).map((_, i) => {
+        const d = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + i);
+        return this.getDailyAverageOccupancy(d);
+      });
     } else if (this.activeTimeFilter === 'Month') {
       this.barChartData.labels = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
-      this.barChartData.datasets[0].data = [total * 0.2, total * 0.3, total * 0.25, total * 0.25];
+      const year = now.getFullYear();
+      const month = now.getMonth();
+      
+      const weekRanges = [
+        { start: 1, end: 7 },
+        { start: 8, end: 14 },
+        { start: 15, end: 21 },
+        { start: 22, end: new Date(year, month + 1, 0).getDate() }
+      ];
+
+      this.barChartData.datasets[0].data = weekRanges.map(range => {
+        let sum = 0;
+        let count = 0;
+        for (let day = range.start; day <= range.end; day++) {
+          const d = new Date(year, month, day);
+          sum += this.getDailyAverageOccupancy(d);
+          count++;
+        }
+        return Math.round(sum / count);
+      });
     }
     this.barChartData = { ...this.barChartData };
   }
