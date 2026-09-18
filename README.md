@@ -9,7 +9,6 @@ This project combines a Flutter mobile application, an Angular dashboard, and an
 The Smart Parking System helps users:
 
 - Search and view real-time parking availability
-- Reserve or monitor parking slots
 - Register vehicles and manage parking sessions
 - Make digital payments and track transaction history
 - View parking rates and active bookings
@@ -117,7 +116,7 @@ The system is organized into three connected layers:
 3. Smart Parking Simulation / Hardware Layer
    - Represents real device-level parking slot states and sends data to the backend.
 
-These components communicate using Firebase services, allowing real-time data synchronization across the application and dashboard.
+These components communicate through Firebase services, enabling real-time data synchronisation across the application and dashboard.
 
 ## Installation and Setup
 
@@ -215,9 +214,6 @@ Before running the app, ensure:
 - Additional parking floor management features
 - Support for more hardware sensors and camera-based detection
 
-## License
-
-This project is intended for academic and project-development use. Please check the repository and institutional requirements before publishing or commercializing the application.
 
 ## Contributors
 
@@ -229,4 +225,4 @@ This repository includes separate modules for the mobile app, dashboard, and sim
 
 ---
 
-For a full setup guide and execution instructions, refer to each project folder's README files in `mobile/`, `dashboard/`, and `simulation/`.
+For a full setup guide and execution instructions, see the README files in each project folder: `mobile/`, `dashboard/`, and `simulation/`.
