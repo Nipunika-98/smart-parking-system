@@ -127,8 +127,6 @@ dashboard/
 
 The dashboard reads and manages parking-system data through Firebase. Confirm that the Firebase configuration in the application matches the project used by the mobile app and simulation.
 
-Do not add private service-account credentials, passwords, or other secrets to this repository.
-
 ## Troubleshooting
 
 If dependencies or generated files cause issues, run:
