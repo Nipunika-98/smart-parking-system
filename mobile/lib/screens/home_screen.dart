@@ -5,7 +5,7 @@ import 'package:mobile/services/auth_service.dart';
 import 'package:mobile/services/user_service.dart';
 import 'package:mobile/services/notification_service.dart';
 import 'package:mobile/models/parking_slot.dart';
-import 'package:mobile/utils/ui_utils.dart';
+
 import 'package:provider/provider.dart';
 import 'package:mobile/providers/user_provider.dart';
 import 'package:mobile/providers/parking_provider.dart';
@@ -55,13 +55,6 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       await _notificationService.sendWelcomeNotification(uid);
       await _userService.updateUserProfile(uid, {'isFirstLogin': false});
-      if (mounted) {
-        UIUtils.showSnackBar(
-          context,
-          'Welcome to SmartPark! 🚗 We are glad to have you here.',
-          isError: false,
-        );
-      }
     } catch (e) {
       debugPrint('Error handling first login: $e');
     }
