@@ -1,59 +1,141 @@
-# SmartParkingDashboard
+# Smart Parking Dashboard
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.0.6.
+The dashboard is the Angular-based administration interface for the Smart Parking System. It provides parking administrators with tools to monitor parking operations, manage users and slots, configure rates, and review reports and transaction data.
 
-## Development server
+## Features
 
-To start a local development server, run:
+- Administrator login and access protection
+- Parking-slot management
+- Parking-rate configuration
+- User directory
+- Parking reports and analytics
+- Transaction logs
+- System settings
+- Firebase data integration
+- Charts and dashboard visualizations
 
-```bash
-ng serve
-```
+## Technology Stack
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+- Angular 19
+- TypeScript
+- Firebase SDK
+- Angular Router
+- Chart.js
+- ng2-charts
+- SCSS
 
-## Code scaffolding
+## Requirements
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+- Node.js and npm
+- Angular CLI 19-compatible environment
+- Access to the configured Firebase project
 
-```bash
-ng generate component component-name
-```
-
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
-```bash
-ng generate --help
-```
-
-## Building
-
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+Check the installed versions:
 
 ```bash
-ng test
+node --version
+npm --version
 ```
 
-## Running end-to-end tests
+## Installation
 
-For end-to-end (e2e) testing, run:
+From the repository root:
 
 ```bash
-ng e2e
+cd dashboard
+npm install
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+If a `package-lock.json` is available, use the following for a reproducible installation:
 
-## Additional Resources
+```bash
+npm ci
+```
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+## Development Server
+
+Start the local development server:
+
+```bash
+npm start
+```
+
+Alternatively:
+
+```bash
+npx ng serve
+```
+
+Open the dashboard at:
+
+```text
+http://localhost:4200/
+```
+
+The application reloads automatically when source files are changed.
+
+## Production Build
+
+```bash
+npm run build
+```
+
+The compiled application is generated in the `dist/` directory.
+
+## Testing
+
+Run unit tests with Karma:
+
+```bash
+npm test
+```
+
+The project can also be tested directly with Angular CLI:
+
+```bash
+npx ng test
+```
+
+## Project Structure
+
+```text
+dashboard/
+├── src/
+│   ├── app/
+│   │   ├── dashboard/
+│   │   ├── guards/
+│   │   ├── login/
+│   │   ├── parking-rates/
+│   │   ├── parking-slot-management/
+│   │   ├── reports/
+│   │   ├── services/
+│   │   ├── sidebar/
+│   │   ├── system-settings/
+│   │   ├── transaction-logs/
+│   │   ├── user-directory/
+│   │   └── firebase.config.ts
+│   ├── main.ts
+│   └── styles.scss
+├── public/
+├── angular.json
+├── package.json
+├── tsconfig.json
+└── README.md
+```
+
+## Firebase Configuration
+
+The dashboard reads and manages parking-system data through Firebase. Confirm that the Firebase configuration in the application matches the project used by the mobile app and simulation.
+
+Do not add private service-account credentials, passwords, or other secrets to this repository.
+
+## Troubleshooting
+
+If dependencies or generated files cause issues, run:
+
+```bash
+rm -rf node_modules
+npm install
+```
+
+On Windows PowerShell, remove `node_modules` manually or use an equivalent command. If the dashboard cannot connect to Firebase, verify the Firebase configuration, authentication settings, Firestore rules, and network connection.
