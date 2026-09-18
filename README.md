@@ -206,14 +206,10 @@ Before running the app, ensure:
 
 ## Future Enhancements
 
-- Real-time reservation system
-- Dynamic pricing based on occupancy
 - SMS/Email notifications
 - Advanced analytics and prediction
-- Integration with QR gate entry systems
 - Additional parking floor management features
 - Support for more hardware sensors and camera-based detection
-
 
 ## Contributors
 
