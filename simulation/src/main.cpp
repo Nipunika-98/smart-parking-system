@@ -171,7 +171,6 @@ void setup() {
   Serial.println("\n╔════════════════════════════════════════╗");
   Serial.println("║  SMART PARKING MANAGEMENT SYSTEM       ║");
   Serial.println("║  9-Slot Configuration (Firebase)       ║");
-  Serial.println("║  Author: Naveen Sanjaya                ║");
   Serial.println("╚════════════════════════════════════════╝\n");
 
   // Connect to WiFi

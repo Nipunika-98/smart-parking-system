@@ -5,6 +5,7 @@ import 'package:mobile/services/vehicle_service.dart';
 import 'package:mobile/services/auth_service.dart';
 import 'package:mobile/models/user_model.dart';
 import 'package:mobile/utils/ui_utils.dart';
+import 'package:flutter/services.dart';
 
 class AddVehicleScreen extends StatefulWidget {
   final String? vehicleId;
@@ -146,12 +147,19 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
         }
 
         if (!mounted) return;
-        UIUtils.showSnackBar(
-          context,
-          widget.vehicleId != null ? 'Vehicle Updated' : 'Vehicle Added',
-          isError: false,
-        );
-        Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+        if (!_isFirstVehicle && _pendingUser == null) {
+          UIUtils.showSnackBar(
+            context,
+            widget.vehicleId != null ? 'Vehicle Updated' : 'Vehicle Added',
+            isError: false,
+          );
+        }
+
+        if (Navigator.canPop(context) && !_isFirstVehicle && _pendingUser == null) {
+          Navigator.pop(context);
+        } else {
+          Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+        }
       } catch (e) {
         if (!mounted) return;
         UIUtils.showSnackBar(context, UIUtils.getFriendlyErrorMessage(e), isError: true);
@@ -234,6 +242,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                   controller: plateController,
                   focusNode: _plateFocus,
                   textCapitalization: TextCapitalization.characters,
+                  inputFormatters: [UpperCaseTextFormatter()],
                   autocorrect: false,
                   enableSuggestions: false,
                   textInputAction: TextInputAction.done,
@@ -405,5 +414,12 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
     );
+  }
+}
+
+class UpperCaseTextFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+    return TextEditingValue(text: newValue.text.toUpperCase(), selection: newValue.selection);
   }
 }

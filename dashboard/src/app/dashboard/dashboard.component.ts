@@ -26,7 +26,7 @@ export interface Activity {
 })
 export class DashboardComponent implements OnInit, OnDestroy {
   private ratesService = inject(ParkingRatesService);
-  
+
   // Statistics data
   availableSlots = { count: 0, label: '0% available' };
   totalParking = { count: 0, label: 'Across 6 zones' };
@@ -73,7 +73,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
     datasets: [
       {
-        data: [65, 72, 85, 90, 95, 82, 55],
+        data: [0, 0, 0, 0, 0, 0, 0],
         backgroundColor: '#0d7b8a',
         borderRadius: 4,
         barPercentage: 0.6,
@@ -93,48 +93,106 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   private calculateRevenueStats() {
-    if (!this.allSessions.length) return;
-
-    const now = new Date();
     let total = 0;
     let pending = 0;
+    const now = new Date();
 
-    this.allSessions.forEach(s => {
-      if (s.status === 'PENDING') pending++;
-      
-      const sessionDate = s.entryTime;
-      if (!sessionDate) return;
+    if (this.allSessions.length) {
+      this.allSessions.forEach(s => {
+        if (s.status === 'PENDING') pending++;
 
-      const isToday = sessionDate.toDateString() === now.toDateString();
-      const isThisWeek = (now.getTime() - sessionDate.getTime()) < (7 * 24 * 60 * 60 * 1000);
-      const isThisMonth = sessionDate.getMonth() === now.getMonth() && sessionDate.getFullYear() === now.getFullYear();
+        const sessionDate = s.entryTime;
+        if (!sessionDate) return;
 
-      // Only count PAID sessions towards "Total Revenue" if marked by an Admin
-      if (s.status === 'PAID' && s.rawData['markerByAdmin']) {
-        if (this.activeTimeFilter === 'Today' && isToday) total += s.amount;
-        if (this.activeTimeFilter === 'Week' && isThisWeek) total += s.amount;
-        if (this.activeTimeFilter === 'Month' && isThisMonth) total += s.amount;
-      }
-    });
+        const isToday = sessionDate.toDateString() === now.toDateString();
+        const isThisWeek = (now.getTime() - sessionDate.getTime()) < (7 * 24 * 60 * 60 * 1000);
+        const isThisMonth = sessionDate.getMonth() === now.getMonth() && sessionDate.getFullYear() === now.getFullYear();
+
+        // Only count PAID sessions towards "Total Revenue" if marked by an Admin
+        if (s.status === 'PAID' && s.rawData['markerByAdmin']) {
+          if (this.activeTimeFilter === 'Today' && isToday) total += s.amount;
+          if (this.activeTimeFilter === 'Week' && isThisWeek) total += s.amount;
+          if (this.activeTimeFilter === 'Month' && isThisMonth) total += s.amount;
+        }
+      });
+    }
 
     this.totalRevenue.amount = `LKR ${total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     this.totalRevenue.label = `↑ Updated just now`;
     this.pendingPayments.count = pending;
     this.pendingPayments.label = `${pending} sessions active`;
 
-    this.updateCharts(total);
+    this.updateCharts();
   }
 
-  private updateCharts(total: number) {
+  private getOccupancyAt(t: Date): number {
+    const capacity = this.totalParking.count || 10;
+    let occupiedCount = 0;
+
+    this.allSessions.forEach(s => {
+      if (!s.entryTime) return;
+      const entered = s.entryTime.getTime() <= t.getTime();
+      const notExitedYet = !s.exitTime || s.exitTime.getTime() > t.getTime();
+      if (entered && notExitedYet) {
+        occupiedCount++;
+      }
+    });
+
+    return Math.min(100, Math.round((occupiedCount / capacity) * 100));
+  }
+
+  private getDailyAverageOccupancy(date: Date): number {
+    const hours = [9, 12, 15, 18];
+    let totalOccupancy = 0;
+    hours.forEach(hour => {
+      const t = new Date(date.getFullYear(), date.getMonth(), date.getDate(), hour, 0, 0);
+      totalOccupancy += this.getOccupancyAt(t);
+    });
+    return Math.round(totalOccupancy / hours.length);
+  }
+
+  private updateCharts() {
+    const now = new Date();
+
     if (this.activeTimeFilter === 'Today') {
+      const targetHours = [6, 9, 12, 15, 18, 21];
       this.barChartData.labels = ['6am', '9am', '12pm', '3pm', '6pm', '9pm'];
-      this.barChartData.datasets[0].data = [total * 0.1, total * 0.2, total * 0.3, total * 0.2, total * 0.15, total * 0.05];
+      this.barChartData.datasets[0].data = targetHours.map(hour => {
+        const t = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hour, 0, 0);
+        return this.getOccupancyAt(t);
+      });
     } else if (this.activeTimeFilter === 'Week') {
       this.barChartData.labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-      this.barChartData.datasets[0].data = [total * 0.1, total * 0.15, total * 0.2, total * 0.2, total * 0.2, total * 0.1, total * 0.05];
+      const currentDay = now.getDay();
+      const mondayOffset = currentDay === 0 ? -6 : 1 - currentDay;
+      const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + mondayOffset);
+
+      this.barChartData.datasets[0].data = Array.from({ length: 7 }).map((_, i) => {
+        const d = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + i);
+        return this.getDailyAverageOccupancy(d);
+      });
     } else if (this.activeTimeFilter === 'Month') {
       this.barChartData.labels = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
-      this.barChartData.datasets[0].data = [total * 0.2, total * 0.3, total * 0.25, total * 0.25];
+      const year = now.getFullYear();
+      const month = now.getMonth();
+
+      const weekRanges = [
+        { start: 1, end: 7 },
+        { start: 8, end: 14 },
+        { start: 15, end: 21 },
+        { start: 22, end: new Date(year, month + 1, 0).getDate() }
+      ];
+
+      this.barChartData.datasets[0].data = weekRanges.map(range => {
+        let sum = 0;
+        let count = 0;
+        for (let day = range.start; day <= range.end; day++) {
+          const d = new Date(year, month, day);
+          sum += this.getDailyAverageOccupancy(d);
+          count++;
+        }
+        return Math.round(sum / count);
+      });
     }
     this.barChartData = { ...this.barChartData };
   }
@@ -188,13 +246,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
         const entryTime = data['entryTime']?.toDate ? data['entryTime'].toDate() : null;
         const exitTime = data['exitTime']?.toDate ? data['exitTime'].toDate() : null;
         const status = data['paymentStatus'] || 'PENDING';
-        
+
         let amount = data['amount'] || data['totalAmount'] || 0;
-        
+
         if (amount === 0 && entryTime) {
           const end = exitTime || new Date();
           const durationHrs = Math.ceil((end.getTime() - entryTime.getTime()) / 3600000);
-          
+
           const rate = this.rates['car'] || { firstHour: 100, subsequentHour: 100 };
           amount = rate.firstHour + (Math.max(0, durationHrs - 1) * rate.subsequentHour);
         }
@@ -219,7 +277,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         events.push({
           type: s.status,
           title: s.ticketNumber,
-          description: `Status: ${s.status} • User: ${s.userId.substring(0,6)}`,
+          description: `Status: ${s.status} • User: ${s.userId.substring(0, 6)}`,
           time: this.formatTimeDiff(diffMins),
           timestampMs: s.entryTime.getTime()
         });

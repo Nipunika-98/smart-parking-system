@@ -39,16 +39,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _emailFocus.addListener(() => _onFocusChange(_emailFocus, _emailController));
     _phoneFocus.addListener(() => _onFocusChange(_phoneFocus, _phoneController));
     _passwordFocus.addListener(() => _onFocusChange(_passwordFocus, _passwordController));
-    _confirmPasswordFocus.addListener(() => _onFocusChange(_confirmPasswordFocus, _confirmPasswordController));
+    _confirmPasswordFocus.addListener(
+      () => _onFocusChange(_confirmPasswordFocus, _confirmPasswordController),
+    );
   }
 
   void _onFocusChange(FocusNode node, TextEditingController controller) {
     if (node.hasFocus && controller.text.isNotEmpty) {
       Future.delayed(const Duration(milliseconds: 100), () {
         if (!controller.selection.isCollapsed) {
-          controller.selection = TextSelection.collapsed(
-            offset: controller.selection.extentOffset,
-          );
+          controller.selection = TextSelection.collapsed(offset: controller.selection.extentOffset);
         }
       });
     }
@@ -81,11 +81,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           saveToFirestore: false, // Defer until vehicle is added
         );
         if (mounted) {
-          Navigator.pushReplacementNamed(
-            context,
-            '/add-vehicle',
-            arguments: newUser,
-          );
+          Navigator.pushReplacementNamed(context, '/add-vehicle', arguments: newUser);
         }
       } catch (e) {
         if (mounted) {
@@ -138,7 +134,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       children: [
                         BrandLogo(size: 80),
                         SizedBox(height: 12),
-                         Text(
+                        Text(
                           'SmartPark',
                           style: TextStyle(
                             fontSize: 20,
@@ -225,7 +221,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       }
                       if (!RegExp(r'^\d{10}$').hasMatch(value.trim())) {
                         return 'Enter exactly 10 digits';
-                       }
+                      }
                       return null;
                     },
                   ),
@@ -252,11 +248,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) return 'Password is required';
                       if (value.length < 8) return 'Password must be at least 8 characters';
-                      if (!RegExp(
-                        r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$',
-                      ).hasMatch(value)) {
-                        return 'Include at least one a-z, A-Z, and number';
-                      }
                       return null;
                     },
                   ),
